@@ -1,0 +1,6 @@
+# everything Glib creates on your computer: recordings, voice samples, downloaded voice engines
+data/
+.venv/
+__pycache__/
+*.pyc
+*.part

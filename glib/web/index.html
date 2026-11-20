@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Glib</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/assets/favicon.ico">
+<style>
+:root{
+  --navy:#193b77; --ink:#1d2740; --muted:#66708a; --line:#e3e7f0; --bg:#f6f7fb; --card:#fff;
+  --blue:#2ea8e6; --pink:#d63fd0; --orange:#ff9a1f; --green:#1e9e6a; --amber:#c97a00; --red:#d23b4e;
+  --green-bg:#e6f6ee; --amber-bg:#fff3dc; --red-bg:#fde8eb; --blue-bg:#e6f4fc;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:15px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--bg)}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:8px 14px}
+button:hover{border-color:#c5cce0}
+button:disabled{opacity:.5;cursor:default}
+button.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+button.primary:hover{background:#12305f}
+button.ghost{border-color:transparent;background:transparent;color:var(--muted);padding:6px 8px}
+button.small{padding:5px 10px;font-size:13px}
+input,textarea,select{font:inherit;color:inherit;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:#fff;width:100%}
+textarea{resize:vertical}
+input:focus,textarea:focus,select:focus,button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+h1,h2,h3{margin:0;color:var(--navy);text-wrap:balance}
+h2{font-size:20px} h3{font-size:15px}
+.muted{color:var(--muted)} .small{font-size:13px}
+
+header{display:flex;align-items:center;gap:18px;padding:10px 22px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:24px;color:var(--navy);letter-spacing:-.5px}
+header .brand img{height:38px}
+nav{display:flex;gap:4px;margin-left:10px}
+nav button{border:0;background:transparent;color:var(--muted);font-weight:600;padding:8px 14px;border-radius:999px}
+nav button.on{background:var(--blue-bg);color:var(--navy)}
+.spacer{flex:1}
+.pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;background:var(--bg);color:var(--muted)}
+.pill.work{background:var(--blue-bg);color:var(--navy)}
+.pill.bad{background:var(--red-bg);color:var(--red)}
+.spin{width:12px;height:12px;border:2px solid var(--blue);border-right-color:transparent;border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+main{max-width:1240px;margin:0 auto;padding:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px}
+.banner{display:flex;align-items:center;gap:16px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--orange);border-radius:14px;padding:14px 18px;margin-bottom:18px}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;min-width:200px}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--pink),var(--orange));border-radius:99px;transition:width .4s}
+
+/* start page */
+.start{display:grid;grid-template-columns:1.5fr 1fr;gap:18px;align-items:start}
+.start label{display:block;font-weight:600;margin:14px 0 6px}
+.plist{list-style:none;margin:10px 0 0;padding:0}
+.plist li{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.plist a{flex:1;color:var(--navy);font-weight:600;text-decoration:none;cursor:pointer}
+
+/* workspace */
+.work{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+.lines{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;position:sticky;top:78px;max-height:calc(100vh - 100px);display:flex;flex-direction:column}
+.lines .head{padding:14px 16px;border-bottom:1px solid var(--line)}
+.lines ol{list-style:none;margin:0;padding:0;overflow:auto}
+.lines li{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;align-items:flex-start}
+.lines li:hover{background:var(--bg)}
+.lines li.sel{background:var(--blue-bg)}
+.lines li .n{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px;width:20px;text-align:right;padding-top:3px}
+.lines li .t{flex:1;font-size:13.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lines li.title .t{font-weight:700;color:var(--navy)}
+.dot{width:10px;height:10px;border-radius:50%;margin-top:6px;flex:none;background:#cfd5e3}
+.dot.good{background:var(--green)} .dot.check{background:var(--amber)} .dot.rebuilt{background:var(--pink)} .dot.busy{background:var(--blue);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.35}}
+
+.stage .prompt{font-size:30px;line-height:1.4;font-weight:600;color:var(--navy);min-height:120px;text-wrap:pretty}
+.stage .prompt.title{font-size:34px}
+.kicker{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.recrow{display:flex;align-items:center;gap:16px;margin:22px 0 6px;flex-wrap:wrap}
+.rec{width:72px;height:72px;border-radius:50%;border:0;background:var(--red);box-shadow:0 6px 18px rgba(210,59,78,.35);position:relative;flex:none}
+.rec::after{content:"";position:absolute;inset:24px;background:#fff;border-radius:50%;transition:all .15s}
+.rec.on::after{border-radius:5px;inset:25px}
+.rec.on{animation:pulse 1.2s infinite}
+.meter{flex:1;min-width:160px;height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+.meter>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--orange));transition:width .1s}
+.result{margin-top:18px;border-top:1px solid var(--line);padding-top:18px}
+.verdict{display:flex;gap:10px;align-items:flex-start;border-radius:12px;padding:12px 14px;font-weight:600}
+.verdict.good{background:var(--green-bg);color:#146c49} .verdict.check{background:var(--amber-bg);color:#8a5400} .verdict.wait{background:var(--blue-bg);color:var(--navy)}
+.heard{margin:14px 0;font-size:17px;line-height:1.9}
+.heard .cut{text-decoration:line-through;color:var(--muted)}
+.heard .wrong,.heard .extra{background:var(--red-bg);color:var(--red);border-radius:5px;padding:1px 5px}
+.heard .missing{border:1.5px dashed var(--red);color:var(--red);border-radius:5px;padding:0 5px}
+.heard .near{background:var(--amber-bg);border-radius:5px;padding:1px 5px}
+ul.flags{margin:8px 0 0;padding-left:20px} ul.flags li{margin:3px 0}
+.versions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.ver{border:1.5px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ver.picked{border-color:var(--navy);box-shadow:0 0 0 3px var(--blue-bg)}
+.ver h3{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.ver audio{width:100%;height:36px}
+.ver .tag{font-size:11px;font-weight:700;background:var(--navy);color:#fff;border-radius:99px;padding:2px 8px}
+.actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;align-items:center}
+.footer{display:flex;align-items:center;gap:12px;margin-top:18px;flex-wrap:wrap}
+
+/* voice + settings */
+.two{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;align-items:start}
+.passage{font-size:19px;line-height:1.75;background:var(--bg);border-radius:12px;padding:18px;max-height:340px;overflow:auto}
+.sample{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.sample audio{flex:1;height:34px;min-width:0}
+.field{display:grid;grid-template-columns:1fr 220px;gap:14px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.field:first-of-type{border-top:0}
+.field b{display:block}
+table.say{width:100%;border-collapse:collapse} table.say td{padding:4px 6px 4px 0}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;max-width:640px;display:none;z-index:20;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+@media (max-width:980px){.work,.start,.two{grid-template-columns:1fr}.lines{position:static;max-height:300px}.versions{grid-template-columns:1fr}.stage .prompt{font-size:24px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><img src="/assets/glib-icon-color.png" alt="">glib</div>
+  <nav>
+    <button data-tab="record" class="on">Record</button>
+    <button data-tab="voice">My Voice</button>
+    <button data-tab="settings">Settings</button>
+  </nav>
+  <div class="spacer"></div>
+  <div id="status"></div>
+</header>
+<main>
+  <div id="banner"></div>
+  <section id="tab-record"></section>
+  <section id="tab-voice" hidden></section>
+  <section id="tab-settings" hidden></section>
+</main>
+<div id="toast" role="status"></div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let S = null, pid = localStorage.getItem("glib.pid") || "", sel = 0, tab = "record", drawn = {}, busyRec = false;
+
+const PASSAGE = [
+ "Thank you for joining me today. In this short reading I will speak in my normal teaching voice, at a steady and comfortable pace, exactly as I would in front of a small group.",
+ "Every morning the ward round begins at the same hour. We walk from bed to bed, we listen carefully to the nurses, and we look at each chart before making any decision. A good plan is simple, clear, and written down.",
+ "Numbers matter in our work. Three point five kilograms, sixty breaths per minute, ninety two percent, one hundred and twenty millilitres per kilogram per day. I say each number slowly so that nobody has to guess.",
+ "Some questions have easy answers, and others take more thought. Why is this baby breathing fast? Which test should we choose first? What will we do if the result is unexpected? Asking out loud helps everybody think.",
+ "When I explain a calculation, I start with the reason, then I show the long way, and finally the quick way. Judgement, measure, pleasure, vision; thin, thick, these, those; yellow, jungle, cheerful, shallow.",
+ "The weather outside may be warm or cool, bright or cloudy, but inside the unit the routine stays the same. Wash your hands, check the name, read the order twice, and speak up early if something does not look right.",
+ "That is the end of this sample. I will now pause for a moment, take a breath, and then press the stop button."
+];
+
+function toast(msg, ms = 5000){ const t = $("#toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", ms); }
+async function api(path, method = "GET", body){
+  const opt = {method, headers: {}};
+  if (body instanceof FormData) opt.body = body;
+  else if (body !== undefined){ opt.body = JSON.stringify(body); opt.headers["Content-Type"] = "application/json"; }
+  const r = await fetch(path, opt);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok){ toast(j.detail || "Something went wrong."); throw new Error(j.detail || r.status); }
+  return j;
+}
+const jobFor = key => S.jobs.find(j => j.key === key);
+const lineJob = i => jobFor(`polish:${pid}:${i}`) || jobFor(`rebuild:${pid}:${i}`);
+
+// ---------- polling ----------
+async function refresh(){
+  try { S = await (await fetch("/api/state?pid=" + encodeURIComponent(pid))).json(); } catch(e){ return; }
+  if (pid && S.project === null){ pid = ""; localStorage.removeItem("glib.pid"); }
+  draw();
+}
+function loop(){ refresh().finally(() => setTimeout(loop, S && S.recorder.on ? 200 : 1000)); }
+
+function once(key, value, fn){ const v = JSON.stringify(value); if (drawn[key] !== v){ drawn[key] = v; fn(); } }
+
+function draw(){
+  once("status", [S.jobs, S.engines.progress], drawStatus);
+  once("banner", [S.engines.progress, S.engines.missing_mb, S.engines.rebuild_ready], drawBanner);
+  if (tab === "record"){
+    if (!pid) once("start", [S.projects, S.engines.polish_ready], drawStart);
+    else { once("lines", [S.project, S.jobs, sel], drawLines); once("stage", [S.project.lines[sel], lineJob(sel), sel, S.exports[pid], jobFor("export:" + pid), S.voice.minutes], drawStage); drawMeter(); }
+  }
+  if (tab === "voice"){ once("voice", [S.voice, S.settings.base_voice, jobFor("voice"), S.engines.rebuild_ready], drawVoice); drawMeter(); }
+  if (tab === "settings") once("settings", [S.settings, S.chatterbox], drawSettings);
+}
+
+function drawStatus(){
+  const active = S.jobs.filter(j => j.state !== "error"), errs = S.jobs.filter(j => j.state === "error");
+  let h = "";
+  if (active.length){ const j = active.find(j => j.state === "running") || active[0];
+    h += `<span class="pill work"><span class="spin"></span>${esc(j.label)}${j.note ? " · " + esc(j.note) : ""}${active.length > 1 ? ` (+${active.length - 1} waiting)` : ""}</span>`; }
+  if (errs.length) h += ` <span class="pill bad" title="${esc(errs[0].note)}">${esc(errs[0].label)} failed: ${esc(errs[0].note).slice(0, 70)} <button class="ghost small" onclick="api('/api/jobs/clear','POST').then(refresh)">Dismiss</button></span>`;
+  $("#status").innerHTML = h;
+}
+
+function drawBanner(){
+  const e = S.engines, p = e.progress; let h = "";
+  if (p.running){
+    const pct = p.total_mb ? Math.round(100 * p.done_mb / p.total_mb) : 0;
+    h = `<div class="banner"><div><b>Downloading the voice engines…</b><div class="small muted">${esc(p.current || "")} · ${p.done_mb} of ${p.total_mb} MB. You only do this once.</div></div><div class="spacer"></div><div class="bar"><i style="width:${pct}%"></i></div></div>`;
+  } else if (!e.rebuild_ready){
+    h = `<div class="banner"><div><b>One-time set-up: download the voice engines</b><div class="small muted">${p.error ? esc(p.error) : `About ${(e.missing_mb / 1000).toFixed(1)} GB. After this, Glib works without the internet and nothing you record leaves this computer.`}</div></div><div class="spacer"></div><button class="primary" onclick="api('/api/engines/download','POST').then(refresh)">Download</button></div>`;
+  }
+  $("#banner").innerHTML = h;
+}
+
+// ---------- start page ----------
+function drawStart(){
+  $("#tab-record").innerHTML = `<div class="start">
+    <div class="card"><h2>New script</h2>
+      <p class="muted">Paste your script. Glib splits it into sentences and shows them one at a time, like a teleprompter. Start a line with <b>#</b> to mark it as a title.</p>
+      <label for="ptitle">Name</label><input id="ptitle" placeholder="e.g. TTN – Episode 1">
+      <label for="pscript">Script</label><textarea id="pscript" rows="12" placeholder="# Transient Tachypnoea of the Newborn&#10;The baby is breathing fast, at 90 breaths per minute.&#10;…"></textarea>
+      <div class="actions"><button class="primary" id="pgo">Start recording</button></div>
+    </div>
+    <div class="card"><h2>Your scripts</h2>
+      ${S.projects.length ? `<ul class="plist">${S.projects.map(p => `<li><a data-open="${esc(p.id)}">${esc(p.title)}</a><span class="small muted">${p.lines} lines</span><button class="ghost small" data-del="${esc(p.id)}" title="Delete this script and its recordings">Delete</button></li>`).join("")}</ul>` : `<p class="muted">Nothing yet. Your scripts and recordings will be listed here.</p>`}
+    </div></div>`;
+  $("#pgo").onclick = async () => { const p = await api("/api/projects", "POST", {title: $("#ptitle").value, script: $("#pscript").value}); openProject(p.id); };
+  document.querySelectorAll("[data-open]").forEach(a => a.onclick = () => openProject(a.dataset.open));
+  document.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => { if (confirm("Delete this script and all its recordings?")){ await api("/api/projects/" + b.dataset.del, "DELETE"); drawn = {}; refresh(); } });
+}
+function openProject(id){ pid = id; sel = 0; localStorage.setItem("glib.pid", id); drawn = {}; refresh(); }
+function closeProject(){ pid = ""; localStorage.removeItem("glib.pid"); drawn = {}; $("#tab-record").innerHTML = ""; refresh(); }
+
+// ---------- workspace ----------
+function dotClass(l, i){
+  if (lineJob(i)) return "busy";
+  if (l.pick === "rebuilt") return "rebuilt";
+  if (l.review) return l.review.state;
+  return "";
+}
+function ensureWork(){
+  if ($("#lines")) return;
+  $("#tab-record").innerHTML = `<div class="work"><div class="lines"><div class="head" id="lhead"></div><ol id="lines"></ol></div><div><div class="card stage" id="stage"></div><div class="footer card" id="footer" style="padding:14px 18px"></div></div></div>`;
+}
+function drawLines(){
+  ensureWork();
+  const P = S.project, ready = P.lines.filter(l => l.pick).length;
+  $("#lhead").innerHTML = `<div style="display:flex;align-items:center;gap:8px"><button class="ghost small" onclick="closeProject()" title="Back to all scripts">←</button><h3 style="flex:1">${esc(P.title)}</h3></div>
+    <div class="small muted" style="margin:6px 0 8px">${ready} of ${P.lines.length} lines ready</div><div class="bar" style="min-width:0"><i style="width:${100 * ready / P.lines.length}%"></i></div>`;
+  $("#lines").innerHTML = P.lines.map((l, i) => `<li class="${i === sel ? "sel" : ""} ${l.title ? "title" : ""}" data-i="${i}"><span class="n">${i + 1}</span><span class="t">${esc(l.text)}</span><span class="dot ${dotClass(l, i)}" title="${l.pick ? "Using: " + l.pick : "Not recorded yet"}"></span></li>`).join("");
+  document.querySelectorAll("#lines li").forEach(li => li.onclick = () => select(+li.dataset.i));
+  const cur = $("#lines li.sel"); if (cur) cur.scrollIntoView({block: "nearest"});
+}
+function select(i){ if (S.recorder.on) return; sel = Math.max(0, Math.min(S.project.lines.length - 1, i)); draw(); }
+
+function summary(r){
+  const bits = [];
+  if (r.fillers_cut) bits.push(`${r.fillers_cut} filler${r.fillers_cut > 1 ? "s" : ""} (um, uh)`);
+  if (r.repeats_cut) bits.push(`${r.repeats_cut} repeated word${r.repeats_cut > 1 ? "s" : ""}`);
+  if (r.pause_removed >= 0.2) bits.push(`${r.pause_removed} s of pauses`);
+  return bits.length ? "Removed " + bits.join(", ") + "." : "Nothing needed removing.";
+}
+function heardHtml(view){
+  return view.map(v => v.k === "ok" ? esc(v.t)
+    : v.k === "cut" ? `<span class="cut" title="Removed (${v.why})">${esc(v.t)}</span>`
+    : v.k === "missing" ? `<span class="missing" title="In the script but not heard">${esc(v.t)}</span>`
+    : `<span class="${v.k}" title="${v.want ? "Script says: " + esc(v.want) : "Not in the script"}">${esc(v.t)}</span>`).join(" ");
+}
+function drawStage(){
+  ensureWork();
+  const P = S.project, l = P.lines[sel], r = l.review, c = l.check, job = lineJob(sel), on = S.recorder.on;
+  const v = "?v=" + l.stamp;
+  const url = k => `/api/projects/${pid}/lines/${sel}/${k}.wav${v}`;
+  let res = "";
+  if (job) res = `<div class="verdict wait"><span class="spin" style="margin-top:5px"></span><div>${esc(job.label)}${job.note ? " · " + esc(job.note) : ""}${job.state === "queued" ? " (waiting its turn)" : ""}</div></div>`;
+  else if (r){
+    const hard = r.flags.filter(f => f.hard), soft = r.flags.filter(f => !f.hard);
+    res = `<div class="verdict ${r.state}"><div>${r.state === "good" ? "✓ This take matches the script. " : "This take needs a second look. "}${summary(r)}</div></div>
+      ${r.view.length ? `<div class="kicker" style="margin-top:14px">What Glib heard</div><div class="heard">${heardHtml(r.view)}</div>` : ""}
+      ${hard.length > 5 ? `<p><b>This take is very different from the script (${hard.length} differences).</b> Was it the right line?</p>` : r.flags.length ? `<ul class="flags">${hard.map(f => `<li><b>${esc(f.text)}</b></li>`).join("")}${soft.map(f => `<li>${esc(f.text)}</li>`).join("")}</ul>` : ""}
+      ${hard.length ? `<p class="small muted">Polish cannot fix a wrong or missing word. Record the line again, or use Rebuild, which always follows the script.</p>` : ""}
+      ${r.flat ? `<p class="small muted">Delivery sounds a little flat on this take (voice movement ${r.melody} semitones; lively reading is usually above 2.5). Rebuild gives a livelier reading.</p>` : ""}`;
+  }
+  const ver = (k, name, about) => {
+    if (!l.has[k]) return `<div class="ver"><h3>${name}</h3><div class="small muted">${about}</div></div>`;
+    const picked = l.pick === k;
+    return `<div class="ver ${picked ? "picked" : ""}"><h3>${name}${picked ? `<span class="tag">In the final audio</span>` : ""}</h3><audio controls preload="none" src="${url(k)}"></audio>
+      ${picked ? "" : `<button class="small" data-choose="${k}">Use this one</button>`}
+      ${k === "rebuilt" && c && c.flags.length ? `<div class="small muted">${c.flags.map(f => esc(f.text)).join("<br>")}</div>` : ""}</div>`;
+  };
+  $("#stage").innerHTML = `
+    <div class="kicker">${l.title ? "Title" : "Line"} ${sel + 1} of ${P.lines.length}</div>
+    <div class="prompt ${l.title ? "title" : ""}" id="prompt">${esc(l.text)}</div>
+    <div class="recrow">
+      <button class="rec ${on ? "on" : ""}" id="rec" title="Record (Space)" aria-label="${on ? "Stop recording" : "Start recording"}"></button>
+      <div style="min-width:150px"><b id="rectxt">${on ? "Recording… press Space to stop" : (l.has.raw ? "Record again" : "Press Space and read the line")}</b><div class="small muted" id="rectime">${on ? "" : "Space = record / stop · ↑ ↓ = move between lines"}</div></div>
+      <div class="meter" title="Microphone level"><i id="level"></i></div>
+    </div>
+    ${res ? `<div class="result">${res}</div>` : ""}
+    ${(l.has.raw || l.has.rebuilt) ? `<div class="versions">
+      ${ver("raw", "Original", "Your recording, untouched.")}
+      ${ver("polished", "Polished", "Your recording with slips, long pauses and noise removed.")}
+      ${ver("rebuilt", "Rebuilt", "Read again from the script in your voice tone, with a neutral British accent.")}</div>` : ""}
+    <div class="actions">
+      <button id="rb" ${job || on ? "disabled" : ""}>${l.has.rebuilt ? "Rebuild again" : "Rebuild this line"}</button>
+      <button id="edit" ${job || on ? "disabled" : ""}>Edit the text</button>
+      <label class="small muted" style="cursor:pointer">or <u>import a sound file</u><input type="file" id="up" accept="audio/*,.wav,.mp3,.flac,.ogg" hidden></label>
+      <div class="spacer"></div>
+      <button id="prev" ${sel === 0 ? "disabled" : ""}>← Previous</button>
+      <button class="primary" id="next" ${sel === P.lines.length - 1 ? "disabled" : ""}>Next →</button>
+    </div>`;
+  $("#rec").onclick = toggleRec;
+  $("#prev").onclick = () => select(sel - 1);
+  $("#next").onclick = () => select(sel + 1);
+  $("#rb").onclick = () => api(`/api/projects/${pid}/lines/${sel}/rebuild`, "POST").then(refresh);
+  $("#edit").onclick = async () => { const t = prompt("Edit this line. The recording will be checked again against the new text.", l.text); if (t && t.trim() && t.trim() !== l.text){ await api(`/api/projects/${pid}/lines/${sel}`, "PUT", {text: t}); refresh(); } };
+  $("#up").onchange = async e => { const f = new FormData(); f.append("file", e.target.files[0]); await api(`/api/projects/${pid}/lines/${sel}/upload`, "POST", f); refresh(); };
+  document.querySelectorAll("[data-choose]").forEach(b => b.onclick = async () => { await api(`/api/projects/${pid}/lines/${sel}`, "PUT", {choice: b.dataset.choose}); refresh(); });
+
+  const ex = S.exports[pid], ej = jobFor("export:" + pid);
+  $("#footer").innerHTML = `
+    <button onclick="rebuildMany(true)" title="Rebuild only the lines that are not recorded or need a second look">Rebuild lines that need it</button>
+    <button onclick="rebuildMany(false)" title="Rebuild every line, for a full reading in the neutral accent">Rebuild every line</button>
+    <div class="spacer"></div>
+    ${ex && !ej ? `<span class="small muted">Saved ${esc(ex.name)} · ${ex.minutes} min${ex.skipped.length ? ` · ${ex.skipped.length} line(s) skipped (nothing recorded)` : ""}</span><a href="/api/projects/${pid}/export.wav"><button>Download</button></a><button onclick="api('/api/open','POST',{pid})">Open folder</button>` : ""}
+    <button class="primary" ${ej ? "disabled" : ""} onclick="api('/api/projects/${pid}/export','POST').then(refresh)">${ej ? "Exporting…" : "Export the audio"}</button>`;
+}
+async function rebuildMany(onlyFlagged){
+  const r = await api(`/api/projects/${pid}/rebuild`, "POST", onlyFlagged ? {only_missing: true, only_flagged: true} : {only_missing: false});
+  toast(r.queued ? `Rebuilding ${r.queued} line${r.queued > 1 ? "s" : ""}. You can keep working while it runs.` : "No lines need rebuilding.");
+  refresh();
+}
+function drawMeter(){
+  const r = S.recorder, bar = $("#level") || $("#vlevel"); if (!bar) return;
+  bar.style.width = (r.on ? Math.round(r.level * 100) : 0) + "%";
+  const t = $("#rectime") || $("#vtime"); if (t && r.on) t.textContent = r.seconds.toFixed(1) + " s" + (r.too_loud ? " · too loud, move back a little" : "");
+}
+async function toggleRec(){
+  if (busyRec) return; busyRec = true;
+  try {
+    if (S.recorder.on) await api("/api/record/stop", "POST", {});
+    else await api("/api/record/start", "POST", {target: tab === "voice" ? {voice: true} : {pid, idx: sel}});
+  } catch(e){} finally { busyRec = false; drawn.stage = drawn.voice = null; refresh(); }
+}
+
+// ---------- my voice ----------
+function drawVoice(){
+  const v = S.voice, on = S.recorder.on, job = jobFor("voice"), goal = 5;
+  $("#tab-voice").innerHTML = `<div class="two">
+    <div class="card"><h2>Teach Glib your voice</h2>
+      <p class="muted">Rebuild reads the script with a natural British reader, then gives it <b>your</b> voice tone. To do that it needs to hear you. Read the text below in your normal teaching voice, in a quiet room. Mistakes do not matter here.</p>
+      <div class="passage">${PASSAGE.map(p => `<p style="margin:0 0 12px">${esc(p)}</p>`).join("")}</div>
+      <div class="recrow">
+        <button class="rec ${on ? "on" : ""}" id="vrec" aria-label="${on ? "Stop" : "Record a voice sample"}"></button>
+        <div style="min-width:150px"><b>${on ? "Recording… press again to stop" : "Record a voice sample"}</b><div class="small muted" id="vtime">${on ? "" : "Any text works. More minutes means a closer match."}</div></div>
+        <div class="meter"><i id="vlevel"></i></div>
+      </div>
+      <label class="small muted" style="cursor:pointer">or <u>add a clean recording of yourself</u><input type="file" id="vup" accept="audio/*,.wav,.mp3,.flac,.ogg" hidden></label>
+    </div>
+    <div class="card"><h2>Your voice samples</h2>
+      <p style="margin:10px 0 6px"><b>${v.minutes.toFixed(1)} minutes</b> <span class="muted">recorded · aim for ${goal} or more</span></p>
+      <div class="bar" style="min-width:0"><i style="width:${Math.min(100, 100 * v.minutes / goal)}%"></i></div>
+      <p class="small muted">${v.minutes < 1 ? "Rebuild works from about one minute, but sounds rough until there is more." : v.minutes < goal ? "Good start. Adding more samples makes the rebuilt voice clearer and closer to yours." : "Plenty to work with."}</p>
+      ${v.samples.map(s => `<div class="sample"><audio controls preload="none" src="/api/voice/${esc(s.name)}?v=${s.seconds}"></audio><span class="small muted">${s.seconds} s</span><button class="ghost small" data-vdel="${esc(s.name)}">Remove</button></div>`).join("")}
+      ${v.samples.length ? `<div class="actions"><button id="learn" ${job ? "disabled" : ""}>${job ? esc(job.note || "Studying your voice…") : "Study my voice now"}</button><span class="small muted">Otherwise this happens on the first Rebuild.</span></div>` : ""}
+      <h3 style="margin-top:22px">British reader</h3>
+      <p class="small muted">The reader sets the accent, rhythm and liveliness. Pick the one nearest to your own pitch for the best match.</p>
+      <select id="bvoice">${Object.entries(S.voices).map(([k, n]) => `<option value="${k}" ${S.settings.base_voice === k ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>
+    </div></div>`;
+  $("#vrec").onclick = toggleRec;
+  $("#vup").onchange = async e => { const f = new FormData(); f.append("file", e.target.files[0]); await api("/api/voice/upload", "POST", f); refresh(); };
+  $("#bvoice").onchange = e => api("/api/settings", "POST", {base_voice: e.target.value}).then(refresh);
+  if ($("#learn")) $("#learn").onclick = () => api("/api/voice/learn", "POST").then(refresh);
+  document.querySelectorAll("[data-vdel]").forEach(b => b.onclick = async () => { await api("/api/voice/" + b.dataset.vdel, "DELETE"); refresh(); });
+}
+
+// ---------- settings ----------
+async function drawSettings(){
+  const s = S.settings, devs = await api("/api/devices").catch(() => []);
+  const num = (k, label, about, min, max, step) => `<div class="field"><div><b>${label}</b><span class="small muted">${about}</span></div><input type="number" data-k="${k}" value="${s[k]}" min="${min}" max="${max}" step="${step}"></div>`;
+  $("#tab-settings").innerHTML = `<div class="two">
+    <div class="card"><h2>Recording and Polish</h2>
+      <div class="field"><div><b>Microphone</b><span class="small muted">Which microphone Glib records from.</span></div><select data-k="input_device" data-type="dev"><option value="">Windows default</option>${devs.map(d => `<option value="${d.id}" ${s.input_device === d.id ? "selected" : ""}>${esc(d.name)}</option>`).join("")}</select></div>
+      <div class="field"><div><b>Clean background noise</b><span class="small muted">Lowers steady hum and hiss.</span></div><select data-k="clean_noise" data-type="bool"><option value="true" ${s.clean_noise ? "selected" : ""}>On</option><option value="false" ${!s.clean_noise ? "selected" : ""}>Off</option></select></div>
+      ${num("max_pause", "Shorten pauses longer than", "Seconds.", 0.3, 3, 0.05)}
+      ${num("keep_pause", "…down to", "Seconds of pause left in.", 0.1, 1.5, 0.05)}
+      <h2 style="margin-top:22px">Final audio</h2>
+      ${num("line_gap", "Pause between lines", "Seconds.", 0, 3, 0.05)}
+      ${num("title_gap", "Pause after a title", "Seconds.", 0, 4, 0.05)}
+      <h2 style="margin-top:22px">Rebuild</h2>
+      ${num("speed", "Reading speed", "1 is normal. 0.9 is slower, 1.1 faster.", 0.7, 1.3, 0.05)}
+      <div class="field"><div><b>Voice converter</b><span class="small muted">${S.chatterbox ? "Chatterbox is installed as an alternative." : "Built-in. A second converter (Chatterbox) can be added with “Install extra engines”."}</span></div><select data-k="converter"><option value="knnvc" ${s.converter === "knnvc" ? "selected" : ""}>Built-in</option>${S.chatterbox ? `<option value="chatterbox" ${s.converter === "chatterbox" ? "selected" : ""}>Chatterbox (experimental)</option>` : ""}</select></div>
+    </div>
+    <div class="card"><h2>Say it this way</h2>
+      <p class="muted">Words that must be spoken differently from how they are written. Rebuild reads the right-hand form; the script check accepts either.</p>
+      <table class="say" id="say"><tbody>${Object.entries(s.say_as).map(([a, b]) => `<tr><td><input value="${esc(a)}" placeholder="Written"></td><td><input value="${esc(b)}" placeholder="Spoken"></td></tr>`).join("")}<tr><td><input placeholder="Written, e.g. TPN"></td><td><input placeholder="Spoken, e.g. T P N"></td></tr></tbody></table>
+      <div class="actions"><button class="primary" id="saysave">Save the list</button></div>
+      <h2 style="margin-top:26px">Where everything is kept</h2>
+      <p class="muted">Recordings, voice samples and the voice engines all stay in the Glib data folder on this computer.</p>
+      <button onclick="api('/api/open','POST',{}).then(r => toast(r.folder))">Open the data folder</button>
+      <p class="small muted" style="margin-top:22px">Glib ${esc(S.version)}</p>
+    </div></div>`;
+  document.querySelectorAll("#tab-settings [data-k]").forEach(el => el.onchange = () => {
+    let v = el.value; if (el.type === "number") v = parseFloat(v); if (el.dataset.type === "bool") v = v === "true"; if (el.dataset.type === "dev") v = v === "" ? null : parseInt(v);
+    api("/api/settings", "POST", {[el.dataset.k]: v}).then(() => toast("Saved.", 1500));
+  });
+  $("#saysave").onclick = async () => { const o = {}; document.querySelectorAll("#say tr").forEach(tr => { const [a, b] = tr.querySelectorAll("input"); if (a.value.trim() && b.value.trim()) o[a.value.trim()] = b.value.trim(); }); await api("/api/settings", "POST", {say_as: o}); drawn.settings = null; toast("Saved.", 1500); refresh(); };
+}
+
+// ---------- tabs + keys ----------
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  if (S && S.recorder.on) return toast("Stop the recording first.");
+  tab = b.dataset.tab; document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x === b));
+  for (const t of ["record", "voice", "settings"]) $("#tab-" + t).hidden = t !== tab;
+  drawn = {}; if (tab === "record") $("#tab-record").innerHTML = ""; draw();
+});
+document.addEventListener("keydown", e => {
+  if (!S || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  if (e.code === "Space" && ((tab === "record" && pid) || tab === "voice")){ e.preventDefault(); toggleRec(); }
+  if (tab === "record" && pid && e.code === "ArrowDown"){ e.preventDefault(); select(sel + 1); }
+  if (tab === "record" && pid && e.code === "ArrowUp"){ e.preventDefault(); select(sel - 1); }
+});
+loop();
+</script>
+</body>
+</html>
