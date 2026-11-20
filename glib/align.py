@@ -10,12 +10,11 @@ TENS = "_ _ twenty thirty forty fifty sixty seventy eighty ninety".split()
 NUMBER_WORDS = set(ONES) | set(TENS[2:]) | {"hundred", "thousand", "point", "and", "oh"}
 
 
-# spoken unit names -> the short written form, so "2 mL/kg" matches "two mils per kilo"
+# spoken unit names -> the short written form, so "5 km/h" matches "five kilometres per hour"
 UNITS = {}
 for short, longs in {
     "ml": "milliliter milliliters millilitre millilitres mil mils", "kg": "kilogram kilograms kilo kilos",
-    "mg": "milligram milligrams", "mcg": "microgram micrograms", "g": "gram grams",
-    "mmol": "millimole millimoles", "meq": "milliequivalent milliequivalents",
+    "mg": "milligram milligrams", "g": "gram grams", "km": "kilometer kilometers kilometre kilometres",
     "min": "minute minutes mins", "h": "hour hours hr hrs", "l": "liter liters litre litres",
     "cm": "centimeter centimeters centimetre centimetres", "wk": "week weeks",
 }.items():
@@ -44,7 +43,7 @@ def spoken_number(tok: str):
 
 
 def apply_say_as(text: str, say_as: dict) -> str:
-    """Replace written forms with how they are spoken (PEEP -> peep)."""
+    """Replace written forms with how they are spoken (NASA -> nasa)."""
     for written, spoken in sorted((say_as or {}).items(), key=lambda kv: -len(kv[0])):
         if written.strip():
             text = re.sub(rf"(?<![A-Za-z0-9]){re.escape(written.strip())}(?![A-Za-z0-9])", spoken, text,
@@ -86,12 +85,12 @@ def same(a: str, b: str) -> bool:
 
 
 def starts(a: str, b: str) -> bool:
-    """a is a cut-off beginning of b (a false start such as 'tachy-' before 'tachypnoea')."""
+    """a is a cut-off beginning of b (a false start such as 'recor-' before 'recording')."""
     return len(a) >= 1 and len(b) > len(a) and b.startswith(a)
 
 
 def _joined(word, pieces):
-    """Cost of reading several heard pieces as one script word ('t f i' = TFI, 'ret check' = recheck); 0 = no."""
+    """Cost of reading several heard pieces as one script word ('f a q' = FAQ, 'ret check' = recheck); 0 = no."""
     whole = "".join(pieces)
     if whole == word:
         return 0.05
@@ -133,7 +132,7 @@ def align(script, heard):
                 relax(i, j + 1, c + (0.4 if heard[j] in FILLERS else 1.0), ("extra", 0, 1))
             if i < n:
                 relax(i + 1, j, c + 1.0, ("missing", 1, 0))
-            # one written word heard as several ("TFI" -> "t f i") and the other way round
+            # one written word heard as several ("FAQ" -> "f a q") and the other way round
             for k in (2, 3, 4):
                 if i < n and j + k <= m:
                     r = _joined(script[i], heard[j:j + k])

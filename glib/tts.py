@@ -14,11 +14,9 @@ _lock = threading.Lock()
 UNITS = {
     "mL": ("millilitres", "millilitre"), "ml": ("millilitres", "millilitre"), "L": ("litres", "litre"),
     "kg": ("kilograms", "kilogram"), "g": ("grams", "gram"), "mg": ("milligrams", "milligram"),
-    "mcg": ("micrograms", "microgram"), "mmol": ("millimoles", "millimole"),
-    "mEq": ("milliequivalents", "milliequivalent"), "min": ("minutes", "minute"),
-    "h": ("hours", "hour"), "hr": ("hours", "hour"), "day": ("days", "day"), "dose": ("doses", "dose"),
-    "U": ("units", "unit"), "dL": ("decilitres", "decilitre"), "cm": ("centimetres", "centimetre"),
-    "wk": ("weeks", "week"),
+    "km": ("kilometres", "kilometre"), "min": ("minutes", "minute"),
+    "h": ("hours", "hour"), "hr": ("hours", "hour"), "day": ("days", "day"),
+    "cm": ("centimetres", "centimetre"), "wk": ("weeks", "week"),
 }
 _U = "|".join(sorted(map(re.escape, UNITS), key=len, reverse=True))
 

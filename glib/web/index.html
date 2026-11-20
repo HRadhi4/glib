@@ -136,13 +136,13 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;
 let S = null, pid = localStorage.getItem("glib.pid") || "", sel = 0, tab = "record", drawn = {}, busyRec = false;
 
 const PASSAGE = [
- "Thank you for joining me today. In this short reading I will speak in my normal teaching voice, at a steady and comfortable pace, exactly as I would in front of a small group.",
- "Every morning the ward round begins at the same hour. We walk from bed to bed, we listen carefully to the nurses, and we look at each chart before making any decision. A good plan is simple, clear, and written down.",
- "Numbers matter in our work. Three point five kilograms, sixty breaths per minute, ninety two percent, one hundred and twenty millilitres per kilogram per day. I say each number slowly so that nobody has to guess.",
- "Some questions have easy answers, and others take more thought. Why is this baby breathing fast? Which test should we choose first? What will we do if the result is unexpected? Asking out loud helps everybody think.",
- "When I explain a calculation, I start with the reason, then I show the long way, and finally the quick way. Judgement, measure, pleasure, vision; thin, thick, these, those; yellow, jungle, cheerful, shallow.",
- "The weather outside may be warm or cool, bright or cloudy, but inside the unit the routine stays the same. Wash your hands, check the name, read the order twice, and speak up early if something does not look right.",
- "That is the end of this sample. I will now pause for a moment, take a breath, and then press the stop button."
+ "Thank you for joining me today. In this short reading I will speak in my normal voice, at a steady and comfortable pace, exactly as I would when explaining something to a small group.",
+ "Every morning the town wakes slowly. The baker opens his shop at six, the first bus leaves the station at half past, and by eight o'clock the streets are busy with people on their way to work and school.",
+ "Numbers should be easy to follow. Three point five kilometres, sixty pages an hour, ninety two percent, one hundred and twenty steps to the top of the tower. I say each number slowly so that nobody has to guess.",
+ "Some questions have easy answers, and others take more thought. Why is the sky darker in winter? Which road should we choose first? What will we do if the weather changes? Asking out loud helps everybody think.",
+ "When I explain an idea, I start with the reason, then I show the long way, and finally the quick way. Judgement, measure, pleasure, vision; thin, thick, these, those; yellow, jungle, cheerful, shallow.",
+ "The weather outside may be warm or cool, bright or cloudy, but a good routine stays the same. Check the list, read the label twice, keep your desk tidy, and speak up early if something does not look right.",
+ "That is the end of this sample. I will now pause for a moment, and then press the stop button."
 ];
 
 function toast(msg, ms = 5000){ const t = $("#toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", ms); }
@@ -204,8 +204,8 @@ function drawStart(){
   $("#tab-record").innerHTML = `<div class="start">
     <div class="card"><h2>New script</h2>
       <p class="muted">Paste your script. Glib splits it into sentences and shows them one at a time, like a teleprompter. Start a line with <b>#</b> to mark it as a title.</p>
-      <label for="ptitle">Name</label><input id="ptitle" placeholder="e.g. TTN – Episode 1">
-      <label for="pscript">Script</label><textarea id="pscript" rows="12" placeholder="# Transient Tachypnoea of the Newborn&#10;The baby is breathing fast, at 90 breaths per minute.&#10;…"></textarea>
+      <label for="ptitle">Name</label><input id="ptitle" placeholder="e.g. Welcome video">
+      <label for="pscript">Script</label><textarea id="pscript" rows="12" placeholder="# Welcome&#10;Hello, and thank you for watching.&#10;Today we will look at three simple ideas.&#10;…"></textarea>
       <div class="actions"><button class="primary" id="pgo">Start recording</button></div>
     </div>
     <div class="card"><h2>Your scripts</h2>
@@ -335,7 +335,7 @@ function drawVoice(){
   const v = S.voice, on = S.recorder.on, job = jobFor("voice"), goal = 5;
   $("#tab-voice").innerHTML = `<div class="two">
     <div class="card"><h2>Teach Glib your voice</h2>
-      <p class="muted">Rebuild reads the script with a natural British reader, then gives it <b>your</b> voice tone. To do that it needs to hear you. Read the text below in your normal teaching voice, in a quiet room. Mistakes do not matter here.</p>
+      <p class="muted">Rebuild reads the script with a natural British reader, then gives it <b>your</b> voice tone. To do that it needs to hear you. Read the text below in your normal speaking voice, in a quiet room. Mistakes do not matter here.</p>
       <div class="passage">${PASSAGE.map(p => `<p style="margin:0 0 12px">${esc(p)}</p>`).join("")}</div>
       <div class="recrow">
         <button class="rec ${on ? "on" : ""}" id="vrec" aria-label="${on ? "Stop" : "Record a voice sample"}"></button>
@@ -380,7 +380,7 @@ async function drawSettings(){
     </div>
     <div class="card"><h2>Say it this way</h2>
       <p class="muted">Words that must be spoken differently from how they are written. Rebuild reads the right-hand form; the script check accepts either.</p>
-      <table class="say" id="say"><tbody>${Object.entries(s.say_as).map(([a, b]) => `<tr><td><input value="${esc(a)}" placeholder="Written"></td><td><input value="${esc(b)}" placeholder="Spoken"></td></tr>`).join("")}<tr><td><input placeholder="Written, e.g. TPN"></td><td><input placeholder="Spoken, e.g. T P N"></td></tr></tbody></table>
+      <table class="say" id="say"><tbody>${Object.entries(s.say_as).map(([a, b]) => `<tr><td><input value="${esc(a)}" placeholder="Written"></td><td><input value="${esc(b)}" placeholder="Spoken"></td></tr>`).join("")}<tr><td><input placeholder="Written, e.g. NASA"></td><td><input placeholder="Spoken, e.g. nasa"></td></tr></tbody></table>
       <div class="actions"><button class="primary" id="saysave">Save the list</button></div>
       <h2 style="margin-top:26px">Where everything is kept</h2>
       <p class="muted">Recordings, voice samples and the voice engines all stay in the Glib data folder on this computer.</p>

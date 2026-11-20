@@ -29,11 +29,11 @@ You choose, line by line, which version goes into the final audio file.
 2. **Record**: paste a script, press **Space**, read the line, press **Space** again.
    Green means the take matches the script. Amber means it needs a second look.
 3. Use **Rebuild this line** for lines that are hard to get right, or **Rebuild every line**
-   for a whole episode in the neutral accent.
+   for a whole script in the neutral accent.
 4. **Export the audio** saves one WAV file, ready for the video editor.
 
 **Settings** has the pause lengths, the reading speed, and a "Say it this way" list for words
-that are spoken differently from how they are written (PEEP is said "peep").
+that are spoken differently from how they are written (NASA is said "nasa", not spelled out).
 
 ## Good to know
 
@@ -41,7 +41,7 @@ that are spoken differently from how they are written (PEEP is said "peep").
   four times the length of the line on an ordinary laptop.
 - Polish only keeps a cut after listening again and confirming the line is closer to the script.
   If a slip cannot be removed cleanly, it says so instead of damaging the take.
-- The word check is advice, not a verdict: medical terms and numbers are sometimes misheard.
+- The word check is advice, not a verdict: unusual words, names and numbers are sometimes misheard.
 - Rebuilt audio is computer-generated speech in your voice tone. Use it only with your own voice.
 - "Install extra engines" adds Chatterbox, a second voice converter to try.
 

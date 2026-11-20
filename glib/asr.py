@@ -60,7 +60,7 @@ def _listen_whisper(x16, threads, size):
                                          download_root=str(config.MODELS / "whisper"))
         segs, _ = _engines[key].transcribe(
             x16, language="en", word_timestamps=True, condition_on_previous_text=False,
-            initial_prompt="Umm, let me, let me think, uh, like this. So, so the b- the baby is, um, fine.")
+            initial_prompt="Umm, let me, let me think, uh, like this. So, so the w- the weather is, um, fine.")
         out = [{"word": w.word.strip(), "start": float(w.start), "end": float(w.end)}
                for s in segs for w in (s.words or [])]
     return _tidy(out, len(x16) / 16000)
