@@ -20,10 +20,13 @@ You choose, line by line, which version goes into the final audio file.
 
 ## Install (Windows 10 or 11, 64-bit)
 
-1. Put the `Glib` folder somewhere simple, for example `C:\Glib`.
-2. Double-click **Install Glib**. It installs Python 3.13 if needed, then the parts Glib needs,
-   then the voice engines. Allow about 4 GB of disk space and a good internet connection.
+1. Download **Glib-Setup.bat** from this page and double-click it. If Windows shows a blue
+   "Windows protected your PC" box, choose **More info**, then **Run anyway**.
+2. It downloads Glib, installs Python 3.13 if needed, then the parts Glib needs and the voice
+   engines. Allow about 4 GB of disk space and a good internet connection.
 3. When it finishes, Glib opens and a **Glib** icon is on the desktop.
+
+Already have the folder? Double-click **Install Glib** inside it instead.
 
 ## Use
 
