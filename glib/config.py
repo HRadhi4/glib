@@ -28,7 +28,7 @@ DEFAULTS = {
     "input_device": None,
     "threads": max(2, (os.cpu_count() or 4) - 1),
     # Written exactly as the reader should say them. Used by Rebuild and by the script check.
-    "say_as": {"PEEP": "peep", "PedOTG": "Pediatrics On The Go", "CPAP": "see-pap"},
+    "say_as": {"PEEP": "peep", "CPAP": "see-pap"},
 }
 
 BRITISH_VOICES = {
