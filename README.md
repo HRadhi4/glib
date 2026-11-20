@@ -2,6 +2,8 @@
 
 # Glib
 
+<a href="https://ko-fi.com/hradhi4"><img src="https://img.shields.io/badge/Ko--fi-Buy%20me%20a%20coffee-FF5E5B?logo=kofi&logoColor=white" alt="Support on Ko-fi"></a>
+
 A recording app for narration that is read from a script. It runs entirely on your own
 computer: after the one-time set-up, nothing you record leaves it.
 
@@ -44,6 +46,12 @@ that are spoken differently from how they are written (NASA is said "nasa", not 
 - The word check is advice, not a verdict: unusual words, names and numbers are sometimes misheard.
 - Rebuilt audio is computer-generated speech in your voice tone. Use it only with your own voice.
 - "Install extra engines" adds Chatterbox, a second voice converter to try.
+
+## Support
+
+If Glib saves you time, you can buy me a coffee on Ko-fi. It helps me keep adding features and fixing problems.
+
+<a href="https://ko-fi.com/hradhi4"><img src="https://img.shields.io/badge/Ko--fi-Buy%20me%20a%20coffee-FF5E5B?logo=kofi&logoColor=white&style=for-the-badge" alt="Support on Ko-fi"></a>
 
 ## Licence
 
