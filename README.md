@@ -1,6 +1,6 @@
 <p align="center"><img src="assets/glib-logo.png" alt="Glib" width="260"></p>
 
-# Glib
+# glib
 
 <a href="https://ko-fi.com/hradhi4"><img src="https://img.shields.io/badge/Ko--fi-Buy%20me%20a%20coffee-FF5E5B?logo=kofi&logoColor=white" alt="Support on Ko-fi"></a>
 
