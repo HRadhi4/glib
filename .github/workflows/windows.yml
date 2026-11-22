@@ -123,11 +123,12 @@ jobs:
           $setup = Get-ChildItem dist\GlibSetup-*.exe -ErrorAction SilentlyContinue | Select-Object -First 1
           if ($setup) {
             # GitHub limits one file to 100 MB, so the installer travels in 90 MB parts
-            $bytes = [IO.File]::ReadAllBytes($setup.FullName); $part = 90MB; $n = 0
-            for ($i = 0; $i -lt $bytes.Length; $i += $part) {
-              $len = [Math]::Min($part, $bytes.Length - $i)
-              [IO.File]::WriteAllBytes("report\$($setup.Name).part$n", $bytes[$i..($i + $len - 1)]); $n++
+            $in = [IO.File]::OpenRead($setup.FullName); $buf = New-Object byte[] (90MB); $n = 0
+            while (($read = $in.Read($buf, 0, $buf.Length)) -gt 0) {
+              $out = [IO.File]::Create((Join-Path (Resolve-Path report) "$($setup.Name).part$n"))
+              $out.Write($buf, 0, $read); $out.Close(); $n++
             }
+            $in.Close()
             (Get-FileHash $setup.FullName -Algorithm SHA256).Hash | Set-Content "report\$($setup.Name).sha256"
           }
           cd report
