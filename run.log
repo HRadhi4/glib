@@ -1,0 +1,192 @@
+[0;93m2026-11-22 09:28:16.746322627 [W:onnxruntime:Default, device_discovery.cc:95 GetPciBusId] Skipping pci_bus_id for PCI path at "/sys/devices/LNXSYSTM:00/LNXSYBUS:00/ACPI0004:00/MSFT1000:00/5620e0c7-8062-4dce-aeb7-520c7ef76171" because filename "5620e0c7-8062-4dce-aeb7-520c7ef76171" did not match expected pattern of [0-9a-f]+:[0-9a-f]+:[0-9a-f]+[.][0-9a-f]+[m
+{
+ "io": {
+  "enc_in": [
+   [
+    "audio_values",
+    [
+     "batch_size",
+     "num_samples"
+    ]
+   ]
+  ],
+  "enc_out": [
+   [
+    "audio_features",
+    [
+     "batch_size",
+     33,
+     1024
+    ]
+   ],
+   [
+    "audio_tokens",
+    [
+     "batch_size",
+     "audio_sequence_length"
+    ]
+   ],
+   [
+    "speaker_embeddings",
+    [
+     1,
+     192
+    ]
+   ],
+   [
+    "speaker_features",
+    [
+     "batch_size",
+     "feature_dim",
+     80
+    ]
+   ]
+  ],
+  "dec_in": [
+   [
+    "speech_tokens",
+    [
+     "batch_size",
+     "num_speech_tokens"
+    ]
+   ],
+   [
+    "speaker_embeddings",
+    [
+     "batch_size",
+     192
+    ]
+   ],
+   [
+    "speaker_features",
+    [
+     "batch_size",
+     "feature_dim",
+     80
+    ]
+   ]
+  ]
+ },
+ "clean_ref_seconds": 4.4,
+ "clean_V1_avg6_l2": {
+  "in_s": 3.84,
+  "out_s": 3.84,
+  "work": 7.0
+ },
+ "clean_V1_avg6_l3": {
+  "in_s": 3.82,
+  "out_s": 3.84,
+  "work": 6.9
+ },
+ "clean_V1_avg6_l6": {
+  "in_s": 7.68,
+  "out_s": 7.68,
+  "work": 11.1
+ },
+ "clean_V2_single_l2": {
+  "in_s": 3.84,
+  "out_s": 3.84,
+  "work": 7.1
+ },
+ "clean_V2_single_l3": {
+  "in_s": 3.82,
+  "out_s": 3.84,
+  "work": 7.2
+ },
+ "clean_V2_single_l6": {
+  "in_s": 7.68,
+  "out_s": 7.68,
+  "work": 11.0
+ },
+ "clean_V3_avgall_l2": {
+  "in_s": 3.84,
+  "out_s": 3.84,
+  "work": 7.4
+ },
+ "clean_V3_avgall_l3": {
+  "in_s": 3.82,
+  "out_s": 3.84,
+  "work": 7.6
+ },
+ "clean_V3_avgall_l6": {
+  "in_s": 7.68,
+  "out_s": 7.68,
+  "work": 11.6
+ },
+ "clean_V4_phrases_l2": {
+  "in_s": 3.84,
+  "out_s": 3.84,
+  "work": 7.3
+ },
+ "clean_V4_phrases_l3": {
+  "in_s": 3.82,
+  "out_s": 3.84,
+  "work": 7.2
+ },
+ "clean_V4_phrases_l6": {
+  "in_s": 7.68,
+  "out_s": 7.68,
+  "work": 11.8
+ },
+ "room_ref_seconds": 2.6,
+ "room_V1_avg6_l2": {
+  "in_s": 3.84,
+  "out_s": 3.84,
+  "work": 7.1
+ },
+ "room_V1_avg6_l3": {
+  "in_s": 3.82,
+  "out_s": 3.84,
+  "work": 7.1
+ },
+ "room_V1_avg6_l6": {
+  "in_s": 7.68,
+  "out_s": 7.68,
+  "work": 11.3
+ },
+ "room_V2_single_l2": {
+  "in_s": 3.84,
+  "out_s": 3.84,
+  "work": 7.2
+ },
+ "room_V2_single_l3": {
+  "in_s": 3.82,
+  "out_s": 3.84,
+  "work": 7.4
+ },
+ "room_V2_single_l6": {
+  "in_s": 7.68,
+  "out_s": 7.68,
+  "work": 11.5
+ },
+ "room_V3_avgall_l2": {
+  "in_s": 3.84,
+  "out_s": 3.84,
+  "work": 8.1
+ },
+ "room_V3_avgall_l3": {
+  "in_s": 3.82,
+  "out_s": 3.84,
+  "work": 8.0
+ },
+ "room_V3_avgall_l6": {
+  "in_s": 7.68,
+  "out_s": 7.68,
+  "work": 12.3
+ },
+ "room_V4_phrases_l2": {
+  "in_s": 3.84,
+  "out_s": 3.84,
+  "work": 7.9
+ },
+ "room_V4_phrases_l3": {
+  "in_s": 3.82,
+  "out_s": 3.84,
+  "work": 7.9
+ },
+ "room_V4_phrases_l6": {
+  "in_s": 7.68,
+  "out_s": 7.68,
+  "work": 12.1
+ }
+}
