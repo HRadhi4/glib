@@ -413,6 +413,7 @@ document.addEventListener("keydown", e => {
   if (tab === "record" && pid && e.code === "ArrowDown"){ e.preventDefault(); select(sel + 1); }
   if (tab === "record" && pid && e.code === "ArrowUp"){ e.preventDefault(); select(sel - 1); }
 });
+window.addEventListener("pagehide", () => { try { navigator.sendBeacon("/api/bye"); } catch (e) {} });
 loop();
 </script>
 </body>

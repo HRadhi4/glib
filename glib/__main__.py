@@ -55,13 +55,20 @@ def main():
             print(f"Port {PORT} is busy. Close the other program or set GLIB_PORT.")
             return
     import uvicorn
-    from . import server
+    from . import recorder, server
 
-    def watch():   # close quietly a little while after the window is closed and no work is running
+    def watch():
+        """Close quietly once the window has been closed and no work is running.
+        A closing window says goodbye; if it never does (crash, power cut), give up after a long
+        silence. Minimised windows are slowed down by Windows, so silence alone must be long."""
         while True:
             time.sleep(5)
-            busy = any(j["state"] in ("queued", "running") for j in server.jobs.values())
-            if server.last_seen["ever"] and not busy and time.time() - server.last_seen["t"] > 45:
+            busy = recorder.status()["on"] or any(j["state"] in ("queued", "running") for j in server.jobs.values())
+            seen = server.last_seen
+            if busy or not seen["ever"]:
+                continue
+            quiet = time.time() - seen["t"]
+            if (seen["bye"] and time.time() - seen["bye"] > 20 and quiet > 20) or quiet > 20 * 60:
                 os._exit(0)
 
     threading.Thread(target=watch, daemon=True).start()

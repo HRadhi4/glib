@@ -16,9 +16,17 @@ from fastapi.staticfiles import StaticFiles
 from . import __version__, audio, config, master, models, pipeline, recorder, store, vc
 
 app = FastAPI(title="Glib")
+
+
+@app.middleware("http")
+async def _seen(request, call_next):
+    """Any request from the window counts as 'the window is open'."""
+    if request.url.path.startswith("/api/") and request.url.path != "/api/bye":
+        last_seen.update(t=time.time(), ever=True, bye=0.0)
+    return await call_next(request)
 app.mount("/assets", StaticFiles(directory=str(config.WEB / "assets")), name="assets")
 
-last_seen = {"t": time.time(), "ever": False}
+last_seen = {"t": time.time(), "ever": False, "bye": 0.0}
 jobs = {}                 # key -> {"label", "state", "note"}
 _queue = queue.Queue()
 _exports = {}
@@ -72,9 +80,15 @@ def index():
     return FileResponse(config.WEB / "index.html", headers={"Cache-Control": "no-store"})
 
 
+@app.post("/api/bye")
+def bye():
+    """Sent by the window as it closes."""
+    last_seen["bye"] = time.time()
+    return {"ok": True}
+
+
 @app.get("/api/state")
 def state(pid: str = ""):
-    last_seen.update(t=time.time(), ever=True)
     s = config.load()
     out = {
         "version": __version__, "settings": s, "voices": config.BRITISH_VOICES,
