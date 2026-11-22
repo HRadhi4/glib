@@ -1,0 +1,120 @@
+name: Windows installer
+
+on:
+  push:
+    branches: [v0.2]
+    paths-ignore: ["**.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: v
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path glib\__init__.py -Pattern '__version__ = "(.+)"').Matches[0].Groups[1].Value
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Bundle a private copy of Python
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download --repo astral-sh/python-build-standalone --pattern "cpython-3.12.*-x86_64-pc-windows-msvc-install_only.tar.gz" -D dl
+          $tgz = (Get-ChildItem dl\*.tar.gz)[0]
+          "Python runtime: $($tgz.Name)" | Tee-Object -FilePath build-info.txt
+          New-Item -ItemType Directory -Force build\app | Out-Null
+          tar -xzf $tgz.FullName -C build
+          Move-Item build\python build\app\runtime
+          build\app\runtime\python.exe -m pip install --no-cache-dir --only-binary :all: --disable-pip-version-check -r requirements.txt
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          build\app\runtime\python.exe -m pip list --format=freeze | Tee-Object -Append -FilePath build-info.txt
+
+      - name: Slim the runtime
+        shell: pwsh
+        run: |
+          $r = "build\app\runtime"
+          foreach ($d in "Lib\test","Lib\idlelib","Lib\tkinter","Lib\turtledemo","tcl","Lib\ensurepip","include","libs","Scripts") {
+            if (Test-Path "$r\$d") { Remove-Item -Recurse -Force "$r\$d" }
+          }
+          Get-ChildItem -Recurse -Directory "$r\Lib\site-packages" -Include tests,test,__pycache__ | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+          "{0:N0} MB runtime" -f ((Get-ChildItem -Recurse $r | Measure-Object Length -Sum).Sum / 1MB) | Tee-Object -Append -FilePath build-info.txt
+
+      - name: Add Glib
+        shell: pwsh
+        run: |
+          Copy-Item -Recurse glib build\app\glib
+          Copy-Item -Recurse assets build\app\assets
+          Copy-Item LICENSE.md,COMMERCIAL-LICENSE.md,THIRD-PARTY-NOTICES.md,README.md build\app\
+          "Glib is installed in this folder. Your recordings are in %LOCALAPPDATA%\Glib." | Set-Content build\app\installed.flag
+          Copy-Item LICENSE.md build\license.txt
+          build\app\runtime\python.exe -m compileall -q build\app\glib build\app\runtime\Lib | Out-Null
+
+      - name: Build the installer
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /Qp "/DAppVersion=${{ steps.v.outputs.version }}" installer\glib.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-ChildItem dist | ForEach-Object { "{0} {1:N1} MB" -f $_.Name, ($_.Length / 1MB) } | Tee-Object -Append -FilePath build-info.txt
+
+      - name: Install it (silent, like a normal user would get)
+        shell: pwsh
+        run: |
+          $setup = (Get-ChildItem dist\GlibSetup-*.exe)[0].FullName
+          Start-Process -Wait $setup -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/TASKS=desktopicon","/LOG=install.log"
+          $app = "$env:LOCALAPPDATA\Programs\Glib"
+          $checks = @(
+            "program folder: " + (Test-Path "$app\runtime\pythonw.exe"),
+            "start menu: " + (Test-Path "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Glib.lnk"),
+            "desktop: " + (Test-Path "$([Environment]::GetFolderPath('Desktop'))\Glib.lnk"),
+            "uninstaller: " + (Test-Path "$app\unins000.exe")
+          )
+          $checks | Tee-Object -Append -FilePath build-info.txt
+
+      - name: Run Glib and test it end to end
+        shell: pwsh
+        env:
+          GLIB_NO_WINDOW: "1"
+        run: |
+          $app = "$env:LOCALAPPDATA\Programs\Glib"
+          $env:GLIB_APP = $app
+          Start-Process "$app\runtime\pythonw.exe" -ArgumentList "-m","glib" -WorkingDirectory $app
+          & "$app\runtime\python.exe" tests\windows_smoke.py smoke_out
+          "smoke exit: $LASTEXITCODE" | Tee-Object -Append -FilePath build-info.txt
+
+      - name: Uninstall (recordings must stay)
+        if: always()
+        shell: pwsh
+        run: |
+          $app = "$env:LOCALAPPDATA\Programs\Glib"
+          if (Test-Path "$app\unins000.exe") {
+            Start-Process -Wait "$app\unins000.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART"
+            Start-Sleep 3
+          }
+          "after uninstall, program folder exists: " + (Test-Path $app) | Tee-Object -Append -FilePath build-info.txt
+          "after uninstall, recordings kept: " + (Test-Path "$env:LOCALAPPDATA\Glib\projects") | Tee-Object -Append -FilePath build-info.txt
+
+      - name: Send results back
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force report | Out-Null
+          Copy-Item build-info.txt report\ -ErrorAction SilentlyContinue
+          Copy-Item install.log report\ -ErrorAction SilentlyContinue
+          if (Test-Path smoke_out) { Copy-Item -Recurse smoke_out report\smoke }
+          $setup = Get-ChildItem dist\GlibSetup-*.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($setup -and $setup.Length -lt 95MB) { Copy-Item $setup.FullName report\ }
+          cd report
+          git init -q
+          git config user.name "HRadhi4"; git config user.email "HRadhi4@users.noreply.github.com"
+          git checkout -q -b ci-results
+          git add -A; git commit -q -m "Windows build and test results ($env:GITHUB_SHA)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-results

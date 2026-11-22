@@ -18,8 +18,8 @@ def read(path, sr=SR) -> np.ndarray:
     return resample(x.mean(axis=1), s, sr)
 
 
-def write(path, x: np.ndarray, sr=SR):
-    sf.write(str(path), np.clip(x, -1, 1), sr, subtype="PCM_16")
+def write(path, x: np.ndarray, sr=SR, subtype="PCM_16"):
+    sf.write(str(path), np.clip(x, -1, 1), sr, subtype=subtype)
 
 
 def frame_db(x: np.ndarray, sr=SR, hop=0.010, win=0.025) -> np.ndarray:

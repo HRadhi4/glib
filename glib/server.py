@@ -13,7 +13,7 @@ from fastapi import Body, FastAPI, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import __version__, audio, config, models, pipeline, recorder, store, vc
+from . import __version__, audio, config, master, models, pipeline, recorder, store, vc
 
 app = FastAPI(title="Glib")
 app.mount("/assets", StaticFiles(directory=str(config.WEB / "assets")), name="assets")
@@ -40,7 +40,7 @@ def _worker():
 def _plain(e):
     text = str(e) or e.__class__.__name__
     if isinstance(e, (ImportError, ModuleNotFoundError)):
-        return "A part of Glib is not installed. Run “Install Glib” again."
+        return "A part of Glib is missing. Run the Glib installer again to repair it."
     if isinstance(e, MemoryError) or "not enough memory" in text.lower():
         return "The computer ran out of memory. Close other programs and try again."
     return text[:300]
@@ -78,9 +78,11 @@ def state(pid: str = ""):
     s = config.load()
     out = {
         "version": __version__, "settings": s, "voices": config.BRITISH_VOICES,
-        "engines": models.status(), "chatterbox": vc.chatterbox_installed(),
-        "voice": {"minutes": round(vc.voice_minutes(), 2),
-                  "samples": [{"name": p.name, "seconds": round(_dur(p))} for p in vc.voice_files()]},
+        "choices": {"loudness": master.LOUDNESS_TARGETS, "denoise": master.DENOISE_LEVELS},
+        "engines": models.status(s),
+        "voice": {"minutes": round(vc.voice_minutes(), 2), "reader": _reader_note(),
+                  "samples": [{"name": p.name, "seconds": round(_dur(p)), "check": _quality().get(p.name)}
+                              for p in vc.voice_files()]},
         "recorder": recorder.status(), "projects": store.listing(),
         "jobs": [dict(j, key=k) for k, j in jobs.items()],
         "exports": _exports,
@@ -94,6 +96,16 @@ def state(pid: str = ""):
         except Exception:
             out["project"] = None
     return out
+
+
+def _reader_note():
+    import json
+    f = config.VOICE / "reader_match.json"
+    try:
+        d = json.loads(f.read_text())
+        return {"voice": config.BRITISH_VOICES.get(d["voice"], d["voice"]), "pitch": d.get("your_pitch_hz")}
+    except Exception:
+        return None
 
 
 def _dur(p):
@@ -227,7 +239,7 @@ def rebuild_many(pid: str, body: dict = Body(default={})):
 
 
 def _check_rebuild_ready():
-    if not models.status()["rebuild_ready"]:
+    if not models.status(config.load())["rebuild_ready"]:
         raise HTTPException(400, "The voice engines are not downloaded yet. Press Download on the top bar.")
     if not vc.voice_files():
         raise HTTPException(400, "Rebuild needs to know your voice. Record a sample in the My Voice tab first.")
@@ -283,9 +295,32 @@ def _add_voice(x):
         raise HTTPException(400, "That sample was too short. Read for at least 20 seconds.")
     config.ensure_dirs()
     n = 1 + max([int(p.stem.split("_")[1]) for p in vc.voice_files()] or [0])
-    x = audio.level(audio.clean_noise(audio.highpass(x)))
-    audio.write(config.VOICE / f"sample_{n:02d}.wav", x)
-    return {"ok": True, "minutes": round(vc.voice_minutes(), 2)}
+    s = config.load()
+    raw_check = master.check_sample(x, config.SR)
+    # keep the voice natural for the converter: no compression or EQ, only rumble and (gentle) noise removal
+    x = master.rumble_filter(x, config.SR)
+    x = master.denoise(x, config.SR, "gentle" if s.get("denoise") != "off" else "off", s["threads"])
+    peak = float(abs(x).max()) or 1.0
+    x = x * (0.89 / peak)
+    name = f"sample_{n:02d}.wav"
+    audio.write(config.VOICE / name, x)
+    _quality()[name] = raw_check
+    _save_quality()
+    return {"ok": True, "minutes": round(vc.voice_minutes(), 2), "check": raw_check}
+
+
+def _quality():
+    global _q
+    if "_q" not in globals():
+        import json
+        f = config.VOICE / "quality.json"
+        _q = json.loads(f.read_text()) if f.exists() else {}
+    return _q
+
+
+def _save_quality():
+    import json
+    (config.VOICE / "quality.json").write_text(json.dumps(_quality(), indent=1))
 
 
 @app.post("/api/voice/upload")
@@ -298,6 +333,8 @@ def voice_delete(name: str):
     f = config.VOICE / Path(name).name
     if f.exists() and f.name.startswith("sample_"):
         f.unlink()
+        _quality().pop(f.name, None)
+        _save_quality()
     return {"ok": True}
 
 

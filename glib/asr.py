@@ -50,22 +50,6 @@ def _listen_parakeet(x16, threads):
     return _tidy(out, len(x16) / 16000)
 
 
-def _listen_whisper(x16, threads, size):
-    """Optional second listener (needs the extra engines to be installed)."""
-    from faster_whisper import WhisperModel
-    with _lock:
-        key = "whisper:" + size
-        if key not in _engines:
-            _engines[key] = WhisperModel(size, device="cpu", compute_type="int8", cpu_threads=threads,
-                                         download_root=str(config.MODELS / "whisper"))
-        segs, _ = _engines[key].transcribe(
-            x16, language="en", word_timestamps=True, condition_on_previous_text=False,
-            initial_prompt="Umm, let me, let me think, uh, like this. So, so the w- the weather is, um, fine.")
-        out = [{"word": w.word.strip(), "start": float(w.start), "end": float(w.end)}
-               for s in segs for w in (s.words or [])]
-    return _tidy(out, len(x16) / 16000)
-
-
 def _tidy(words, dur):
     words = [w for w in words if any(c.isalnum() for c in w["word"])]
     for i, w in enumerate(words):
@@ -82,9 +66,4 @@ def listen(x: np.ndarray, sr: int, settings=None):
     if peak < 1e-4:
         return []
     x16 = (x16 / peak * 0.7).astype(np.float32)
-    if s.get("listener") == "whisper":
-        try:
-            return _listen_whisper(x16, s["threads"], s.get("whisper_size", "small.en"))
-        except ImportError:
-            pass
     return _listen_parakeet(x16, s["threads"])

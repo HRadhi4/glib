@@ -176,7 +176,7 @@ function draw(){
     else { once("lines", [S.project, S.jobs, sel], drawLines); once("stage", [S.project.lines[sel], lineJob(sel), sel, S.exports[pid], jobFor("export:" + pid), S.voice.minutes], drawStage); drawMeter(); }
   }
   if (tab === "voice"){ once("voice", [S.voice, S.settings.base_voice, jobFor("voice"), S.engines.rebuild_ready], drawVoice); drawMeter(); }
-  if (tab === "settings") once("settings", [S.settings, S.chatterbox], drawSettings);
+  if (tab === "settings") once("settings", [S.settings, S.engines.missing_mb], drawSettings);
 }
 
 function drawStatus(){
@@ -194,7 +194,7 @@ function drawBanner(){
     const pct = p.total_mb ? Math.round(100 * p.done_mb / p.total_mb) : 0;
     h = `<div class="banner"><div><b>Downloading the voice engines…</b><div class="small muted">${esc(p.current || "")} · ${p.done_mb} of ${p.total_mb} MB. You only do this once.</div></div><div class="spacer"></div><div class="bar"><i style="width:${pct}%"></i></div></div>`;
   } else if (!e.rebuild_ready){
-    h = `<div class="banner"><div><b>One-time set-up: download the voice engines</b><div class="small muted">${p.error ? esc(p.error) : `About ${(e.missing_mb / 1000).toFixed(1)} GB. After this, Glib works without the internet and nothing you record leaves this computer.`}</div></div><div class="spacer"></div><button class="primary" onclick="api('/api/engines/download','POST').then(refresh)">Download</button></div>`;
+    h = `<div class="banner"><div><b>One-time set-up: download the voice engines</b><div class="small muted">${p.error ? esc(p.error) : `About ${(e.missing_mb / 1000).toFixed(1)} GB. It continues where it left off if the connection drops. After this, Glib works without the internet and nothing you record leaves this computer.`}</div></div><div class="spacer"></div><button class="primary" onclick="api('/api/engines/download','POST').then(refresh)">Download</button></div>`;
   }
   $("#banner").innerHTML = h;
 }
@@ -309,7 +309,7 @@ function drawStage(){
     <button onclick="rebuildMany(true)" title="Rebuild only the lines that are not recorded or need a second look">Rebuild lines that need it</button>
     <button onclick="rebuildMany(false)" title="Rebuild every line, for a full reading in the neutral accent">Rebuild every line</button>
     <div class="spacer"></div>
-    ${ex && !ej ? `<span class="small muted">Saved ${esc(ex.name)} · ${ex.minutes} min${ex.skipped.length ? ` · ${ex.skipped.length} line(s) skipped (nothing recorded)` : ""}</span><a href="/api/projects/${pid}/export.wav"><button>Download</button></a><button onclick="api('/api/open','POST',{pid})">Open folder</button>` : ""}
+    ${ex && !ej ? `<span class="small muted">Saved ${esc(ex.name)} · ${ex.minutes} min · ${ex.lufs} LUFS${ex.skipped.length ? ` · ${ex.skipped.length} line(s) skipped (nothing recorded)` : ""}</span><a href="/api/projects/${pid}/export.wav"><button>Download</button></a><button onclick="api('/api/open','POST',{pid})">Open folder</button>` : ""}
     <button class="primary" ${ej ? "disabled" : ""} onclick="api('/api/projects/${pid}/export','POST').then(refresh)">${ej ? "Exporting…" : "Export the audio"}</button>`;
 }
 async function rebuildMany(onlyFlagged){
@@ -335,7 +335,7 @@ function drawVoice(){
   const v = S.voice, on = S.recorder.on, job = jobFor("voice"), goal = 5;
   $("#tab-voice").innerHTML = `<div class="two">
     <div class="card"><h2>Teach Glib your voice</h2>
-      <p class="muted">Rebuild reads the script with a natural British reader, then gives it <b>your</b> voice tone. To do that it needs to hear you. Read the text below in your normal speaking voice, in a quiet room. Mistakes do not matter here.</p>
+      <p class="muted">Rebuild reads the script with a natural British reader, then speaks it in <b>your</b> voice. To do that it needs to hear you. Read the text below in your normal speaking voice, in a quiet room. Mistakes do not matter here.</p>
       <div class="passage">${PASSAGE.map(p => `<p style="margin:0 0 12px">${esc(p)}</p>`).join("")}</div>
       <div class="recrow">
         <button class="rec ${on ? "on" : ""}" id="vrec" aria-label="${on ? "Stop" : "Record a voice sample"}"></button>
@@ -348,15 +348,18 @@ function drawVoice(){
       <p style="margin:10px 0 6px"><b>${v.minutes.toFixed(1)} minutes</b> <span class="muted">recorded · aim for ${goal} or more</span></p>
       <div class="bar" style="min-width:0"><i style="width:${Math.min(100, 100 * v.minutes / goal)}%"></i></div>
       <p class="small muted">${v.minutes < 1 ? "Rebuild works from about one minute, but sounds rough until there is more." : v.minutes < goal ? "Good start. Adding more samples makes the rebuilt voice clearer and closer to yours." : "Plenty to work with."}</p>
-      ${v.samples.map(s => `<div class="sample"><audio controls preload="none" src="/api/voice/${esc(s.name)}?v=${s.seconds}"></audio><span class="small muted">${s.seconds} s</span><button class="ghost small" data-vdel="${esc(s.name)}">Remove</button></div>`).join("")}
+      ${v.samples.map(s => `<div class="sample"><audio controls preload="none" src="/api/voice/${esc(s.name)}?v=${s.seconds}"></audio><span class="small muted">${s.seconds} s</span><button class="ghost small" data-vdel="${esc(s.name)}">Remove</button></div>${s.check ? `<div class="small" style="margin:-4px 0 6px;color:${s.check.verdict === "good" || s.check.verdict === "ok" ? "var(--green)" : s.check.verdict === "warn" ? "var(--amber)" : "var(--red)"}">${esc(s.check.text)}</div>` : ""}`).join("")}
+      ${v.reader ? `<p class="small muted">Your natural pitch is about ${v.reader.pitch} Hz, so Rebuild reads with <b>${esc(v.reader.voice)}</b>.</p>` : ""}
       ${v.samples.length ? `<div class="actions"><button id="learn" ${job ? "disabled" : ""}>${job ? esc(job.note || "Studying your voice…") : "Study my voice now"}</button><span class="small muted">Otherwise this happens on the first Rebuild.</span></div>` : ""}
-      <h3 style="margin-top:22px">British reader</h3>
-      <p class="small muted">The reader sets the accent, rhythm and liveliness. Pick the one nearest to your own pitch for the best match.</p>
-      <select id="bvoice">${Object.entries(S.voices).map(([k, n]) => `<option value="${k}" ${S.settings.base_voice === k ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>
+      <h3 style="margin-top:22px">Tips for a close match</h3>
+      <ul class="small muted" style="padding-left:18px;margin:6px 0">
+        <li>Use a small room with soft things in it (curtains, sofa, bed). Bare or tiled rooms add echo that gets copied into your voice.</li>
+        <li>Keep about a hand's width between your mouth and the microphone.</li>
+        <li>Read in the voice you want to hear back: relaxed, clear, a little lively.</li>
+      </ul>
     </div></div>`;
   $("#vrec").onclick = toggleRec;
   $("#vup").onchange = async e => { const f = new FormData(); f.append("file", e.target.files[0]); await api("/api/voice/upload", "POST", f); refresh(); };
-  $("#bvoice").onchange = e => api("/api/settings", "POST", {base_voice: e.target.value}).then(refresh);
   if ($("#learn")) $("#learn").onclick = () => api("/api/voice/learn", "POST").then(refresh);
   document.querySelectorAll("[data-vdel]").forEach(b => b.onclick = async () => { await api("/api/voice/" + b.dataset.vdel, "DELETE"); refresh(); });
 }
@@ -364,19 +367,22 @@ function drawVoice(){
 // ---------- settings ----------
 async function drawSettings(){
   const s = S.settings, devs = await api("/api/devices").catch(() => []);
+  const pick = (k, label, about, opts) => `<div class="field"><div><b>${label}</b><span class="small muted">${about}</span></div><select data-k="${k}">${Object.entries(opts).map(([v, n]) => `<option value="${esc(v)}" ${String(s[k]) === v ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></div>`;
   const num = (k, label, about, min, max, step) => `<div class="field"><div><b>${label}</b><span class="small muted">${about}</span></div><input type="number" data-k="${k}" value="${s[k]}" min="${min}" max="${max}" step="${step}"></div>`;
   $("#tab-settings").innerHTML = `<div class="two">
     <div class="card"><h2>Recording and Polish</h2>
       <div class="field"><div><b>Microphone</b><span class="small muted">Which microphone Glib records from.</span></div><select data-k="input_device" data-type="dev"><option value="">Windows default</option>${devs.map(d => `<option value="${d.id}" ${s.input_device === d.id ? "selected" : ""}>${esc(d.name)}</option>`).join("")}</select></div>
-      <div class="field"><div><b>Clean background noise</b><span class="small muted">Lowers steady hum and hiss.</span></div><select data-k="clean_noise" data-type="bool"><option value="true" ${s.clean_noise ? "selected" : ""}>On</option><option value="false" ${!s.clean_noise ? "selected" : ""}>Off</option></select></div>
+      ${pick("denoise", "Background noise removal", "Removes hum, hiss and room noise. Gentle keeps the most natural sound.", S.choices.denoise)}
       ${num("max_pause", "Shorten pauses longer than", "Seconds.", 0.3, 3, 0.05)}
       ${num("keep_pause", "…down to", "Seconds of pause left in.", 0.1, 1.5, 0.05)}
       <h2 style="margin-top:22px">Final audio</h2>
+      ${pick("loudness", "Loudness", "How loud the finished audio is. -16 leaves room for background music; -14 matches YouTube.", S.choices.loudness)}
       ${num("line_gap", "Pause between lines", "Seconds.", 0, 3, 0.05)}
       ${num("title_gap", "Pause after a title", "Seconds.", 0, 4, 0.05)}
       <h2 style="margin-top:22px">Rebuild</h2>
       ${num("speed", "Reading speed", "1 is normal. 0.9 is slower, 1.1 faster.", 0.7, 1.3, 0.05)}
-      <div class="field"><div><b>Voice converter</b><span class="small muted">${S.chatterbox ? "Chatterbox is installed as an alternative." : "Built-in. A second converter (Chatterbox) can be added with “Install extra engines”."}</span></div><select data-k="converter"><option value="knnvc" ${s.converter === "knnvc" ? "selected" : ""}>Built-in</option>${S.chatterbox ? `<option value="chatterbox" ${s.converter === "chatterbox" ? "selected" : ""}>Chatterbox (experimental)</option>` : ""}</select></div>
+      ${pick("base_voice", "British reader", "Sets the accent and rhythm. Automatic picks the reader closest to your own pitch.", Object.assign({auto: "Automatic"}, S.voices))}
+      ${pick("voice_quality", "Voice quality", "Highest is a little more detailed, but slower and a further 1 GB download.", {standard: "Standard", highest: "Highest"})}
     </div>
     <div class="card"><h2>Say it this way</h2>
       <p class="muted">Words that must be spoken differently from how they are written. Rebuild reads the right-hand form; the script check accepts either.</p>

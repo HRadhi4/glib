@@ -1,11 +1,23 @@
-"""Paths and user settings. Everything Glib stores lives in the data folder next to the app."""
+"""Paths and user settings. Recordings, voice samples and engines live in Glib's data folder
+(%LOCALAPPDATA%\Glib when installed, or 'data' next to the app when run from source)."""
 import json
 import os
 import threading
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = Path(os.environ.get("GLIB_DATA", ROOT / "data"))
+
+
+def _data_dir():
+    if os.environ.get("GLIB_DATA"):
+        return Path(os.environ["GLIB_DATA"])
+    if (ROOT / "installed.flag").exists():          # installed copy: keep data outside the program folder
+        base = os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")
+        return Path(base) / "Glib"
+    return ROOT / "data"
+
+
+DATA = _data_dir()
 MODELS = DATA / "models"
 VOICE = DATA / "voice"
 PROJECTS = DATA / "projects"
@@ -15,12 +27,11 @@ SETTINGS_FILE = DATA / "settings.json"
 SR = 48000  # working sample rate for recordings and exports
 
 DEFAULTS = {
-    "listener": "parakeet",        # speech recogniser: parakeet | whisper
-    "whisper_size": "small.en",
-    "converter": "knnvc",          # voice converter: knnvc | chatterbox
-    "base_voice": "bm_george",     # British reader that Rebuild starts from
+    "base_voice": "auto",          # British reader that Rebuild starts from (auto = closest to your pitch)
+    "voice_quality": "standard",   # standard | highest (larger, slower converter)
     "speed": 1.0,
-    "clean_noise": True,
+    "denoise": "normal",           # off | gentle | normal | strong
+    "loudness": "-16",             # LUFS target of the finished audio
     "max_pause": 0.60,             # pauses longer than this are shortened ...
     "keep_pause": 0.32,            # ... to this length (seconds)
     "line_gap": 0.45,              # silence between lines in the export

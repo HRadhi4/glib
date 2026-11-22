@@ -3,7 +3,7 @@ import re
 
 import numpy as np
 
-from . import align, asr, audio, config, store, tts, vc
+from . import align, asr, audio, config, master, store, tts, vc
 from .config import SR
 
 FLAT_BELOW = 2.0   # semitones of pitch spread; under this the delivery sounds flat
@@ -49,9 +49,10 @@ def polish(pid: str, idx: int, note=None):
     s = config.load()
     p = store.load(pid)
     line = p["lines"][idx]
-    x = audio.highpass(audio.read(store.wav(pid, idx, "raw")))
-    if s["clean_noise"]:
-        x = audio.clean_noise(x)
+    x = master.rumble_filter(audio.read(store.wav(pid, idx, "raw")), SR)
+    if note:
+        note("Removing background noise")
+    x = master.denoise(x, SR, s.get("denoise", "normal"), s["threads"])
     if note:
         note("Listening to the recording")
     heard = asr.listen(x, SR, s)
@@ -62,37 +63,60 @@ def polish(pid: str, idx: int, note=None):
                   "seconds": round(len(x) / SR, 1)}
         return store.update_line(pid, idx, review=review)
     first = align.review(line["text"], heard, s.get("say_as"))
-    final, y = first, x
-    spans = _merge(first["cuts"])
-    if spans and note:
+    removed = {"f": 0, "r": 0}
+
+    def clean_up(y, current, rounds):
+        """Cut the slips the listener found, then listen again: a quick repeat often hides behind
+        another and only shows once the audio around it has changed."""
+        for rnd in range(rounds):
+            spans = _merge(current["cuts"])
+            if not spans:
+                break
+            for a, b in reversed(spans):          # last slip first, so earlier times stay valid
+                got = _safe_cut(y, a, b, line["text"], s, align.score(current))
+                if got:
+                    removed["f"] += max(0, current["fillers_cut"] - got[2]["fillers_cut"])
+                    removed["r"] += max(0, current["repeats_cut"] - got[2]["repeats_cut"])
+                    _, y, current = got
+            again = align.review(line["text"], asr.listen(y, SR, s), s.get("say_as"))
+            if align.score(again) >= align.score(current) and not again["cuts"]:
+                current = again
+                break
+            current = again
+        return y, current
+
+    if first["cuts"] and note:
         note("Removing slips")
-    for a, b in reversed(spans):                 # last slip first, so earlier times stay valid
-        got = _safe_cut(y, a, b, line["text"], s, align.score(final))
-        if got:
-            _, y, final = got
-    left = final["fillers_cut"] + final["repeats_cut"]
+    y, final = clean_up(x, first, 3)
+    if note:
+        note("Tidying pauses and finishing the sound")
+    y, pause_removed = audio.tighten(y, SR, s["max_pause"], s["keep_pause"])
+    y = master.finish(y, SR, s, denoise_too=False)
+    if note:
+        note("Final listen")
+    check = align.review(line["text"], asr.listen(y, SR, s), s.get("say_as"))
+    if check["cuts"]:
+        y, check = clean_up(y, check, 2)
+    final = check if align.score(check) <= align.score(final) or check["cuts"] else final
+    y = audio.fade_edges(y)
+    audio.write(store.wav(pid, idx, "polished"), y)
+
     flags = list(final["flags"])
-    if left:
+    if final["cuts"]:
         words_left = ", ".join(f"“{v['t']}”" for v in final["view"] if v["k"] == "cut")
         flags.append({"kind": "left", "hard": True,
                       "text": f"A repeated or filler word could not be removed cleanly: {words_left}"})
-    if note:
-        note("Tidying pauses and loudness")
-    y, removed = audio.tighten(y, SR, s["max_pause"], s["keep_pause"])
-    y = audio.fade_edges(audio.level(y))
-    audio.write(store.wav(pid, idx, "polished"), y)
     mel = audio.melody(y)
-    done = (first["fillers_cut"] + first["repeats_cut"]) - left
     review = {
-        "heard": first["heard"], "view": first["view"], "flags": flags,
-        "fillers_cut": max(0, first["fillers_cut"] - final["fillers_cut"]),
-        "repeats_cut": max(0, first["repeats_cut"] - final["repeats_cut"]),
-        "slips_removed": max(0, done),
-        "pause_removed": round(removed, 1),
+        "heard": first["heard"], "view": first["view"] if not removed["f"] + removed["r"] or not final["cuts"] else final["view"],
+        "flags": flags,
+        "fillers_cut": removed["f"], "repeats_cut": removed["r"], "slips_removed": removed["f"] + removed["r"],
+        "pause_removed": round(pause_removed, 1),
         "melody": round(mel["spread"], 1) if mel else None,
         "flat": bool(mel and mel["spread"] < FLAT_BELOW),
         "state": "check" if any(f["hard"] for f in flags) else "good",
         "seconds": round(len(y) / SR, 1),
+        **master.report(y, SR),
     }
     return store.update_line(pid, idx, review=review)
 
@@ -102,13 +126,16 @@ def rebuild(pid: str, idx: int, note=None):
     line = store.load(pid)["lines"][idx]
     if note:
         note("Reading the line")
-    x, sr = tts.read_aloud(line["text"], s)
+    reader = vc.pick_reader(s)
+    x, sr = tts.read_aloud(line["text"], dict(s, base_voice=reader))
     if note:
-        note("Giving it your voice tone")
+        note("Speaking it in your voice")
     y, sr2 = vc.convert(x, sr, s, note)
-    y = audio.highpass(audio.resample(y, sr2, SR))
+    y = audio.resample(y, sr2, SR)
     y, _ = audio.tighten(y, SR, max_pause=1.2, keep_pause=0.6)
-    y = audio.fade_edges(audio.level(y))
+    if note:
+        note("Finishing the sound")
+    y = audio.fade_edges(master.finish(y, SR, s, denoise_too=False))
     audio.write(store.wav(pid, idx, "rebuilt"), y)
     if note:
         note("Checking the result against the script")
@@ -148,14 +175,20 @@ def export(pid: str, note=None):
             skipped.append(i + 1)
             continue
         used[kind] += 1
-        parts.append(audio.read(store.wav(pid, i, kind)))
+        clip = audio.read(store.wav(pid, i, kind))
+        if kind == "raw":                       # an untouched take still gets the same loudness as the rest
+            clip = master.finish(master.rumble_filter(clip, SR), SR, s, denoise_too=False)
+        parts.append(clip)
         gap = s["title_gap"] if line.get("title") else s["line_gap"]
         parts.append(np.zeros(int(SR * gap), np.float32))
     if not parts:
         raise RuntimeError("There is nothing to export yet. Record or rebuild at least one line.")
     out = np.concatenate([np.zeros(int(SR * 0.25), np.float32)] + parts)
+    if note:
+        note("Matching the loudness of the whole programme")
+    out = master.limit(master.normalise(out, SR, float(s.get("loudness", "-16"))), SR, -1.0)
     name = re.sub(r"[^A-Za-z0-9 _-]+", "", p["title"]).strip() or "glib"
     path = store.folder(pid) / f"{name}.wav"
-    audio.write(path, out)
+    audio.write(path, out, SR, "PCM_24")
     return {"file": str(path), "name": path.name, "minutes": round(len(out) / SR / 60, 2),
-            "used": used, "skipped": skipped}
+            "used": used, "skipped": skipped, **master.report(out, SR)}
