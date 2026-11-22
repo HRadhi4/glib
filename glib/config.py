@@ -1,5 +1,5 @@
-"""Paths and user settings. Recordings, voice samples and engines live in Glib's data folder
-(%LOCALAPPDATA%\Glib when installed, or 'data' next to the app when run from source)."""
+"""Paths and user settings. Recordings, voice samples and engines live in Glib's data folder:
+LOCALAPPDATA/Glib when installed, or 'data' next to the app when run from source."""
 import json
 import os
 import threading
