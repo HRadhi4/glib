@@ -1,6 +1,18 @@
 """The converter: gives the British reader's speech your voice, learned from your voice samples.
 
-Engine: Chatterbox voice conversion (Resemble AI, MIT licence), run through ONNX Runtime.
+Two engines, both run through ONNX Runtime (no PyTorch):
+
+"Natural" - Chatterbox voice conversion (Resemble AI, MIT licence). Generates fresh speech in
+your voice from a 10-second voice prompt. Always clean and smooth, even from short or slightly
+echoey samples, but it only partly takes on your voice.
+
+"Closest to my voice" - kNN-VC (Baas et al., MIT licence). Rebuilds the speech frame by frame
+out of the sounds in your own recordings, so it sounds most like you, but it copies whatever is
+in those recordings: it needs several minutes of clean, echo-free samples.
+
+Glib picks automatically from the quality and length of your samples (Settings can override).
+
+Natural engine:
   speech encoder:      24 kHz audio -> speech tokens, speaker identity (x-vector), voice features
   conditional decoder: tokens + your identity + your voice features -> 24 kHz speech
 
@@ -143,8 +155,10 @@ def _pieces(x, sr, longest):
     return out
 
 
-def convert(x: np.ndarray, sr: int, settings=None, progress=None):
-    """Reader speech in, the same words in your voice out. Returns (samples, 24000)."""
+def convert(x: np.ndarray, sr: int, settings=None, progress=None, engine=None):
+    """Reader speech in, the same words in your voice out. Returns (samples, sample_rate)."""
+    if (engine or "natural") == "match":
+        return convert_match(x, sr, progress)   # 16 kHz
     ref = learn_voice(progress)
     x24 = _peak_norm(resample(x, sr, SR))
     with _lock:
@@ -160,6 +174,102 @@ def convert(x: np.ndarray, sr: int, settings=None, progress=None):
             parts.append(np.squeeze(wav).astype(np.float32))
     from .audio import join
     return join(parts, SR, 0.02), SR
+
+
+# ------------------------------------------------------------------ engine choice
+MATCH_MINUTES = 5.0
+
+
+def load_quality():
+    f = config.VOICE / "quality.json"
+    try:
+        return json.loads(f.read_text())
+    except Exception:
+        return {}
+
+
+def engine_for(settings=None, quality=None):
+    """'natural' or 'match'. quality: {sample name: check dict} from the voice-sample checks."""
+    s = settings or config.load()
+    chosen = s.get("voice_engine", "auto")
+    if chosen in ("natural", "match"):
+        return chosen
+    if voice_minutes() < MATCH_MINUTES:
+        return "natural"
+    quality = load_quality() if quality is None else quality
+    checks = [c for c in quality.values() if c]
+    if any(c.get("verdict") in ("warn", "bad") for c in checks):
+        return "natural"
+    return "match"
+
+
+# ------------------------------------------------------------------ 'closest to my voice' engine (kNN-VC)
+_knn = {}
+
+
+def _knn_sessions():
+    import onnxruntime as ort
+    if not _knn:
+        so = ort.SessionOptions()
+        so.intra_op_num_threads = int(config.load()["threads"])
+        prov = ["CPUExecutionProvider"]
+        _knn["enc"] = ort.InferenceSession(str(models.path("match_encoder")), so, providers=prov)
+        _knn["voc"] = ort.InferenceSession(str(models.path("match_vocoder")), so, providers=prov)
+    return _knn["enc"], _knn["voc"]
+
+
+def _knn_features(x16):
+    enc, _ = _knn_sessions()
+    out, step = [], 20 * 16000
+    for off in range(0, len(x16), step):
+        piece = x16[off:off + step]
+        if len(piece) >= 4000:
+            out.append(enc.run(None, {"wav": piece[None, :].astype(np.float32)})[0])
+    return np.concatenate(out, axis=0) if out else np.zeros((0, 1024), np.float32)
+
+
+def learn_match(progress=None):
+    """Matching set: features of every voiced frame in your samples (cached)."""
+    sig = _signature()
+    cache = config.VOICE / "match_set.npz"
+    with _lock:
+        if "pool" in _knn and _knn.get("sig") == sig:
+            return _knn["pool"]
+        if cache.exists():
+            d = np.load(cache, allow_pickle=False)
+            if str(d["sig"]) == sig:
+                _knn.update(pool=d["pool"].astype(np.float32), sig=sig)
+                return _knn["pool"]
+        feats = []
+        files = voice_files()
+        for i, p in enumerate(files):
+            if progress:
+                progress(f"Learning the details of your voice ({i + 1} of {len(files)})")
+            x = read(p, 16000)
+            m, _ = speech_mask(x, 16000)
+            keep = np.repeat(m, 160)[: len(x)]
+            x = x[: len(keep)][keep]
+            if len(x) > 8000:
+                feats.append(_knn_features(_peak_norm(x, 0.7)))
+        pool = np.concatenate(feats, axis=0).astype(np.float32)
+        np.savez(cache, sig=sig, pool=pool.astype(np.float16))
+        _knn.update(pool=pool, sig=sig)
+        return pool
+
+
+def convert_match(x, sr, progress=None, topk=8):
+    pool = learn_match(progress)
+    q = _knn_features(_peak_norm(resample(x, sr, 16000), 0.7))
+    pn = pool / (np.linalg.norm(pool, axis=1, keepdims=True) + 1e-8)
+    out = np.empty_like(q)
+    for a in range(0, len(q), 256):                  # nearest neighbours by cosine similarity
+        qq = q[a:a + 256] / (np.linalg.norm(q[a:a + 256], axis=1, keepdims=True) + 1e-8)
+        sim = qq @ pn.T
+        idx = np.argpartition(-sim, topk, axis=1)[:, :topk]
+        out[a:a + 256] = pool[idx].mean(axis=1)
+    _, voc = _knn_sessions()
+    wav = voc.run(None, {"features": out[None].astype(np.float32)})[0]
+    return np.squeeze(wav).astype(np.float32), 16000
 
 
 def pick_reader(settings):

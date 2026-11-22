@@ -28,7 +28,8 @@ SR = 48000  # working sample rate for recordings and exports
 
 DEFAULTS = {
     "base_voice": "auto",          # British reader that Rebuild starts from (auto = closest to your pitch)
-    "voice_quality": "standard",   # standard | highest (larger, slower converter)
+    "voice_engine": "auto",        # auto | natural | match ('closest to my voice')
+    "voice_quality": "standard",   # natural engine: standard | highest (larger, slower)
     "speed": 1.0,
     "denoise": "normal",           # off | gentle | normal | strong
     "loudness": "-16",             # LUFS target of the finished audio

@@ -95,6 +95,7 @@ def state(pid: str = ""):
         "choices": {"loudness": master.LOUDNESS_TARGETS, "denoise": master.DENOISE_LEVELS},
         "engines": models.status(s),
         "voice": {"minutes": round(vc.voice_minutes(), 2), "reader": _reader_note(),
+                  "engine": vc.engine_for(s, _quality()), "match_minutes": vc.MATCH_MINUTES,
                   "samples": [{"name": p.name, "seconds": round(_dur(p)), "check": _quality().get(p.name)}
                               for p in vc.voice_files()]},
         "recorder": recorder.status(), "projects": store.listing(),
@@ -326,9 +327,7 @@ def _add_voice(x):
 def _quality():
     global _q
     if "_q" not in globals():
-        import json
-        f = config.VOICE / "quality.json"
-        _q = json.loads(f.read_text()) if f.exists() else {}
+        _q = vc.load_quality()
     return _q
 
 

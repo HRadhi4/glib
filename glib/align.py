@@ -124,7 +124,8 @@ def align(script, heard):
                 r = likeness(script[i], heard[j])
                 if same(script[i], heard[j]):
                     relax(i + 1, j + 1, c, ("ok", 1, 1))
-                elif r >= 0.6 and min(len(script[i]), len(heard[j])) >= 3:
+                elif r >= 0.6 and min(len(script[i]), len(heard[j])) >= 3 \
+                        and not (script[i] in NUMBER_WORDS and heard[j] in NUMBER_WORDS):   # a different number is never "close"
                     relax(i + 1, j + 1, c + 0.6, ("near", 1, 1))
                 else:
                     relax(i + 1, j + 1, c + 1.3, ("wrong", 1, 1))

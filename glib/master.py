@@ -252,8 +252,41 @@ def check_sample(x, sr):
         out.update(verdict="warn", text="Quite quiet. Move closer to the microphone.")
     elif snr < 22:
         out.update(verdict="warn", text="Noisy room. A quieter room gives a much better voice match.")
+    elif (echo := echo_seconds(x, sr)) and echo > 0.42:
+        out.update(verdict="warn", echo=round(echo, 2),
+                   text="Room echo. Record in a smaller room with soft things around you (curtains, a sofa, "
+                        "clothes in a wardrobe); echo in your samples is copied into the rebuilt voice.")
     elif snr < 32:
         out.update(verdict="ok", text="Good. A little background noise.")
     else:
         out.update(verdict="good", text="Clean recording.")
     return out
+
+
+def echo_seconds(x, sr):
+    """Rough reverberation time of the room (seconds for sound to die away by 60 dB),
+    measured on how fast the voice fades at the ends of words. Close-mic speech in a
+    furnished room is usually under 0.3 s; bare rooms are 0.5 s and more."""
+    lv, _ = _env_db(x, sr, 5)                         # 5 ms frames
+    if len(lv) < 200:
+        return None
+    lv = np.convolve(lv, np.ones(3) / 3, mode="same")
+    floor = np.percentile(lv, 10)
+    times = []
+    i = 1
+    while i < len(lv) - 100:
+        if lv[i] > floor + 25 and lv[i] >= lv[i - 1] and lv[i] >= lv[i + 1]:
+            peak, low = lv[i], lv[i]
+            for j in range(i + 1, min(i + 100, len(lv))):   # up to 500 ms
+                if lv[j] > low + 3:                           # the next sound starts: not a clean ending
+                    break
+                low = min(low, lv[j])
+                if lv[j] <= peak - 15:
+                    times.append((j - i) * 0.005)
+                    break
+            i += 8
+        else:
+            i += 1
+    if len(times) < 8:
+        return None
+    return float(4 * np.percentile(times, 30))      # 15 dB fall x4 = 60 dB; the quicker endings show the room

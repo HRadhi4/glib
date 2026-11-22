@@ -13,6 +13,8 @@ PARAKEET_DIR = "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8"
 # Chatterbox voice conversion (Resemble AI, MIT), ONNX export (Apache-2.0)
 CB_Q8 = f"{HF}/TigreGotico/voiceclonnx-chatterbox/resolve/main/onnx"
 CB_FP32 = f"{HF}/onnx-community/chatterbox-ONNX/resolve/main/onnx"
+# kNN-VC (MIT) converted to ONNX for Glib; hosted on the repository's 'models' branch
+KNN = "https://raw.githubusercontent.com/HRadhi4/glib/models"
 
 # name -> (url, file or folder under data/models, size in MB, what it is for)
 FILES = {
@@ -33,6 +35,14 @@ FILES = {
     "converter_enc_hq_data": (f"{CB_FP32}/speech_encoder.onnx_data", "chatterbox/speech_encoder.onnx_data", 565, ""),
     "converter_dec_hq": (f"{CB_FP32}/conditional_decoder.onnx", "chatterbox/conditional_decoder.onnx", 2, ""),
     "converter_dec_hq_data": (f"{CB_FP32}/conditional_decoder.onnx_data", "chatterbox/conditional_decoder.onnx_data", 516, ""),
+    # 'Closest to my voice' engine
+    "match_encoder": ([f"{KNN}/wavlm_l6.onnx.part{k}" for k in range(6)],
+                      "knnvc/wavlm_l6.onnx", 355, "Learns the details of your voice"),
+    "match_vocoder": (f"{KNN}/hifigan_prematched.onnx", "knnvc/hifigan_prematched.onnx", 66, "Rebuilds your voice from those details"),
+}
+SHA256 = {
+    "match_encoder": "1bc97c76007ac45f1e6058f0d4b4e80021c9fadda09a313d46661acc1d626f2f",
+    "match_vocoder": "29fb33b0ea692927937b33e773062867b7bb1874dd259df69d33daaf4099b307",
 }
 
 POLISH = ["listener", "denoiser"]
@@ -42,7 +52,7 @@ def rebuild_set(settings=None):
     s = settings or config.load()
     conv = (["converter_enc_hq", "converter_enc_hq_data", "converter_dec_hq", "converter_dec_hq_data"]
             if s.get("voice_quality") == "highest" else ["converter_enc", "converter_dec"])
-    return ["reader", "reader_voices"] + conv
+    return ["reader", "reader_voices"] + conv + ["match_encoder", "match_vocoder"]
 
 
 progress = {"running": False, "current": None, "done_mb": 0, "total_mb": 0, "error": None}
@@ -75,9 +85,30 @@ def status(settings=None):
 
 def _fetch(name: str):
     url, target, mb, _ = FILES[name]
+    if isinstance(url, list):                                 # a large file stored in parts
+        dest = config.MODELS / target
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        pieces = []
+        for k, u in enumerate(url):
+            piece = f"{name}#{k}"
+            FILES[piece] = (u, target + f".piece{k}", mb // len(url), FILES[name][3])
+            if not (config.MODELS / FILES[piece][1]).exists():
+                _fetch(piece)
+            pieces.append(config.MODELS / FILES[piece][1])
+        progress["current"] = "Checking the download"
+        tmp = dest.with_suffix(dest.suffix + ".joining")
+        with open(tmp, "wb") as out:
+            for p in pieces:
+                with open(p, "rb") as f:
+                    shutil.copyfileobj(f, out, 1 << 22)
+        _verify(name, tmp)
+        shutil.move(tmp, dest)
+        for p in pieces:
+            p.unlink(missing_ok=True)
+        return
     dest = config.MODELS / target
     dest.parent.mkdir(parents=True, exist_ok=True)
-    tmp = dest.parent / (Path(url).name + ".part")
+    tmp = dest.parent / (Path(target).name + ".part")
     got = tmp.stat().st_size if tmp.exists() else 0          # resume an interrupted download
     req = urllib.request.Request(url, headers={"User-Agent": "Glib", **({"Range": f"bytes={got}-"} if got else {})})
     with urllib.request.urlopen(req, timeout=60) as r:
@@ -101,7 +132,22 @@ def _fetch(name: str):
             t.extractall(config.MODELS, filter="data")
         tmp.unlink()
     else:
+        _verify(name, tmp)
         shutil.move(tmp, dest)
+
+
+def _verify(name, f):
+    want = SHA256.get(name)
+    if not want:
+        return
+    import hashlib
+    h = hashlib.sha256()
+    with open(f, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 22), b""):
+            h.update(chunk)
+    if h.hexdigest() != want:
+        f.unlink(missing_ok=True)
+        raise IOError("a downloaded file was damaged; it will be fetched again")
 
 
 def download_all(only=None):

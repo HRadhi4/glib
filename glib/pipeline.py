@@ -128,9 +128,10 @@ def rebuild(pid: str, idx: int, note=None):
         note("Reading the line")
     reader = vc.pick_reader(s)
     x, sr = tts.read_aloud(line["text"], dict(s, base_voice=reader))
+    engine = vc.engine_for(s)
     if note:
         note("Speaking it in your voice")
-    y, sr2 = vc.convert(x, sr, s, note)
+    y, sr2 = vc.convert(x, sr, s, note, engine)
     y = audio.resample(y, sr2, SR)
     y, _ = audio.tighten(y, SR, max_pause=1.2, keep_pause=0.6)
     if note:
@@ -146,7 +147,7 @@ def rebuild(pid: str, idx: int, note=None):
                         "text": "Have a listen: " + f["text"].replace("Wrong word: said", "the listener heard")
                         .replace("Check this word: heard", "the listener heard").replace("script says", "for")}
                        for f in odd],
-             "state": "listen" if odd else "good", "seconds": round(len(y) / SR, 1)}
+             "state": "listen" if odd else "good", "seconds": round(len(y) / SR, 1), "engine": engine}
     return store.update_line(pid, idx, check=check)
 
 
