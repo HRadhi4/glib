@@ -34,8 +34,8 @@ jobs:
           New-Item -ItemType Directory -Force build\app | Out-Null
           tar -xzf $tgz.FullName -C build
           Move-Item build\python build\app\runtime
-          build\app\runtime\python.exe -m pip install --no-cache-dir --only-binary :all: --disable-pip-version-check -r requirements.txt
-          if ($LASTEXITCODE -ne 0) { exit 1 }
+          build\app\runtime\python.exe -m pip install --no-cache-dir --only-binary :all: --disable-pip-version-check -r requirements.txt *>> steps.log
+          if ($LASTEXITCODE -ne 0) { "pip install failed" >> build-info.txt; exit 1 }
           build\app\runtime\python.exe -m pip list --format=freeze | Tee-Object -Append -FilePath build-info.txt
 
       - name: Slim the runtime
@@ -51,18 +51,22 @@ jobs:
       - name: Add Glib
         shell: pwsh
         run: |
+          "step: add glib" >> build-info.txt
           Copy-Item -Recurse glib build\app\glib
           Copy-Item -Recurse assets build\app\assets
           Copy-Item LICENSE.md,COMMERCIAL-LICENSE.md,THIRD-PARTY-NOTICES.md,README.md build\app\
           "Glib is installed in this folder. Your recordings are in %LOCALAPPDATA%\Glib." | Set-Content build\app\installed.flag
           Copy-Item LICENSE.md build\license.txt
-          build\app\runtime\python.exe -m compileall -q build\app\glib build\app\runtime\Lib | Out-Null
+          # pre-compile for a faster first start; a few files in Python's own library never compile, that is expected
+          build\app\runtime\python.exe -m compileall -q build\app\glib build\app\runtime\Lib\site-packages *>> steps.log
+          $global:LASTEXITCODE = 0
 
       - name: Build the installer
         shell: pwsh
         run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /Qp "/DAppVersion=${{ steps.v.outputs.version }}" installer\glib.iss
-          if ($LASTEXITCODE -ne 0) { exit 1 }
+          "step: build installer" >> build-info.txt
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /Qp "/DAppVersion=${{ steps.v.outputs.version }}" installer\glib.iss *>> steps.log
+          if ($LASTEXITCODE -ne 0) { "installer compile failed" >> build-info.txt; exit 1 }
           Get-ChildItem dist | ForEach-Object { "{0} {1:N1} MB" -f $_.Name, ($_.Length / 1MB) } | Tee-Object -Append -FilePath build-info.txt
 
       - name: Install it (silent, like a normal user would get)
@@ -87,8 +91,10 @@ jobs:
           $app = "$env:LOCALAPPDATA\Programs\Glib"
           $env:GLIB_APP = $app
           Start-Process "$app\runtime\pythonw.exe" -ArgumentList "-m","glib" -WorkingDirectory $app
-          & "$app\runtime\python.exe" tests\windows_smoke.py smoke_out
-          "smoke exit: $LASTEXITCODE" | Tee-Object -Append -FilePath build-info.txt
+          & "$app\runtime\python.exe" tests\windows_smoke.py smoke_out *>> steps.log
+          $code = $LASTEXITCODE
+          "smoke exit: $code" | Tee-Object -Append -FilePath build-info.txt
+          if ($code -ne 0) { exit 1 }
 
       - name: Uninstall (recordings must stay)
         if: always()
@@ -107,7 +113,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force report | Out-Null
-          Copy-Item build-info.txt report\ -ErrorAction SilentlyContinue
+          Copy-Item build-info.txt,steps.log report\ -ErrorAction SilentlyContinue
           Copy-Item install.log report\ -ErrorAction SilentlyContinue
           if (Test-Path smoke_out) { Copy-Item -Recurse smoke_out report\smoke }
           $setup = Get-ChildItem dist\GlibSetup-*.exe -ErrorAction SilentlyContinue | Select-Object -First 1
