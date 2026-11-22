@@ -204,6 +204,18 @@ for i in (1, 2, 5):
     (OUT / f"line{i + 1}_rebuilt_match.wav").write_bytes(call(f"/api/projects/{pid}/lines/{i}/rebuilt.wav", raw=True))
 call("/api/settings", "POST", {"voice_engine": "natural"})
 
+# ------------------------------------------------------------------ 6c. American accent
+call("/api/settings", "POST", {"accent": "american"})
+t0 = time.time()
+for i in (1, 5):
+    call(f"/api/projects/{pid}/lines/{i}/rebuild", "POST")
+s = wait_jobs(pid)
+log("rebuild_american", seconds=round(time.time() - t0, 1), reader=state()["voice"]["reader"],
+    settings_reader=state()["settings"]["base_voice"], checks=[s["project"]["lines"][i].get("check") for i in (1, 5)])
+for i in (1, 5):
+    (OUT / f"line{i + 1}_rebuilt_american.wav").write_bytes(call(f"/api/projects/{pid}/lines/{i}/rebuilt.wav", raw=True))
+call("/api/settings", "POST", {"accent": "british"})
+
 # ------------------------------------------------------------------ 7. highest quality converter, same lines
 call("/api/settings", "POST", {"voice_quality": "highest"})
 t0 = time.time()

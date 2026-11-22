@@ -23,7 +23,7 @@ FILES = {
     "denoiser": (f"{GH}/k2-fsa/sherpa-onnx/releases/download/speech-enhancement-models/dpdfnet2_48khz_hr.onnx",
                  "dpdfnet2_48khz_hr.onnx", 11, "Removes background noise at full studio quality"),
     "reader": (f"{GH}/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx",
-               "kokoro-v1.0.onnx", 310, "British reader used by Rebuild"),
+               "kokoro-v1.0.onnx", 310, "Reader used by Rebuild (British and American voices)"),
     "reader_voices": (f"{GH}/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin",
                       "voices-v1.0.bin", 27, "Reader voices"),
     "converter_enc": (f"{CB_Q8}/speech_encoder_q8.onnx", "chatterbox/speech_encoder_q8.onnx", 216,

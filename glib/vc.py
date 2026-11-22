@@ -1,4 +1,4 @@
-"""The converter: gives the British reader's speech your voice, learned from your voice samples.
+"""The converter: gives the reader's speech your voice, learned from your voice samples.
 
 Two engines, both run through ONNX Runtime (no PyTorch):
 
@@ -273,11 +273,14 @@ def convert_match(x, sr, progress=None, topk=8):
 
 
 def pick_reader(settings):
-    """British reader whose natural pitch is closest to yours (Settings > Reader: Automatic)."""
+    """Reader (in the chosen accent) whose natural pitch is closest to yours (Settings > Reader: Automatic)."""
     chosen = settings.get("base_voice", "auto")
-    if chosen != "auto" and chosen in config.BRITISH_VOICES:
+    voices = config.readers(settings)
+    if chosen != "auto" and chosen in voices:
         return chosen
-    cache = config.VOICE / "reader_match.json"
+    accent = settings.get("accent", "british")
+    fallback = config.DEFAULT_READER.get(accent, "bm_george")
+    cache = config.VOICE / f"reader_match_{accent}.json"
     sig = _signature()
     if cache.exists():
         d = json.loads(cache.read_text())
@@ -287,10 +290,10 @@ def pick_reader(settings):
     from . import tts
     mine = [m["pitch_hz"] for m in (melody(read(p)) for p in voice_files()[:3]) if m]
     if not mine:
-        return "bm_george"
+        return fallback
     target = float(np.median(mine))
-    best, gap = "bm_george", 1e9
-    for v in config.BRITISH_VOICES:
+    best, gap = fallback, 1e9
+    for v in voices:
         y, r = tts.read_aloud("Good morning. Today we will look at a few simple ideas, one step at a time.",
                               dict(settings, base_voice=v))
         m = melody(resample(y, r, 48000))

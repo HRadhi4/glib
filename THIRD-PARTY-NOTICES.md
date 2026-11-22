@@ -9,7 +9,7 @@ their own licences.
 |---|---|---|
 | NVIDIA Parakeet TDT 0.6B v2 (ONNX build from the sherpa-onnx project) | Listening to recordings | CC-BY-4.0 (credit NVIDIA) |
 | DPDFNet-2 48 kHz HR (Ceva), ONNX build from the sherpa-onnx project | Noise removal | Apache-2.0 |
-| Kokoro v1.0 (hexgrad), ONNX build from kokoro-onnx | British reader | Apache-2.0 |
+| Kokoro v1.0 (hexgrad), ONNX build from kokoro-onnx | British and American reader | Apache-2.0 |
 | Chatterbox voice conversion (Resemble AI) | Speaking in your voice | MIT |
 | Chatterbox ONNX export (onnx-community; INT8 build by TigreGotico) | Running Chatterbox without PyTorch | Apache-2.0 |
 | WavLM-Large (Microsoft), first 6 layers, converted to ONNX for Glib | Closest-to-my-voice engine | MIT |

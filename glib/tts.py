@@ -1,4 +1,4 @@
-"""The reader: a natural British voice that reads the script. Rebuild then gives it your voice tone."""
+"""The reader: a natural British or American voice that reads the script. Rebuild then gives it your voice."""
 import re
 import threading
 
@@ -35,16 +35,21 @@ def spoken_text(text: str, say_as: dict = None) -> str:
 
 
 def read_aloud(text: str, settings=None):
-    """Returns (samples, sample_rate) of the British reader saying the text."""
+    """Returns (samples, sample_rate) of the reader saying the text, in the chosen accent."""
     global _kokoro
     s = settings or config.load()
     with _lock:
         if _kokoro is None:
             from kokoro_onnx import Kokoro
             _kokoro = Kokoro(str(models.path("reader")), str(models.path("reader_voices")))
-        voice = s.get("base_voice", "bm_george")
-        if voice not in config.BRITISH_VOICES:
-            voice = "bm_george"
-        x, sr = _kokoro.create(spoken_text(text, s.get("say_as")), voice=voice,
-                               speed=float(s.get("speed", 1.0)), lang="en-gb")
+        accent = s.get("accent", "british")
+        voice = s.get("base_voice", "auto")
+        if voice not in config.readers(s):
+            voice = config.DEFAULT_READER.get(accent, "bm_george")
+        american = accent == "american"
+        words = spoken_text(text, s.get("say_as"))
+        if american:                                       # unit names in American spelling
+            words = words.replace("litre", "liter").replace("metre", "meter")
+        x, sr = _kokoro.create(words, voice=voice, speed=float(s.get("speed", 1.0)),
+                               lang="en-us" if american else "en-gb")
     return np.asarray(x, dtype=np.float32), int(sr)

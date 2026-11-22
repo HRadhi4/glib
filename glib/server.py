@@ -91,7 +91,7 @@ def bye():
 def state(pid: str = ""):
     s = config.load()
     out = {
-        "version": __version__, "settings": s, "voices": config.BRITISH_VOICES,
+        "version": __version__, "settings": s, "voices": config.readers(s), "accents": config.ACCENTS,
         "choices": {"loudness": master.LOUDNESS_TARGETS, "denoise": master.DENOISE_LEVELS},
         "engines": models.status(s),
         "voice": {"minutes": round(vc.voice_minutes(), 2), "reader": _reader_note(),
@@ -115,10 +115,12 @@ def state(pid: str = ""):
 
 def _reader_note():
     import json
-    f = config.VOICE / "reader_match.json"
+    s = config.load()
+    f = config.VOICE / f"reader_match_{s.get('accent', 'british')}.json"
     try:
         d = json.loads(f.read_text())
-        return {"voice": config.BRITISH_VOICES.get(d["voice"], d["voice"]), "pitch": d.get("your_pitch_hz")}
+        name = {**config.BRITISH_VOICES, **config.AMERICAN_VOICES}.get(d["voice"], d["voice"])
+        return {"voice": name, "pitch": d.get("your_pitch_hz"), "accent": config.ACCENTS.get(s.get("accent"), "")}
     except Exception:
         return None
 

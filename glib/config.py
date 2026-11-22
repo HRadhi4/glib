@@ -27,7 +27,8 @@ SETTINGS_FILE = DATA / "settings.json"
 SR = 48000  # working sample rate for recordings and exports
 
 DEFAULTS = {
-    "base_voice": "auto",          # British reader that Rebuild starts from (auto = closest to your pitch)
+    "accent": "british",           # accent Rebuild reads in: british | american
+    "base_voice": "auto",          # reader that Rebuild starts from (auto = closest to your pitch)
     "voice_engine": "auto",        # auto | natural | match ('closest to my voice')
     "voice_quality": "standard",   # natural engine: standard | highest (larger, slower)
     "speed": 1.0,
@@ -49,6 +50,19 @@ BRITISH_VOICES = {
     "bf_emma": "Emma (female)", "bf_alice": "Alice (female)",
     "bf_isabella": "Isabella (female)", "bf_lily": "Lily (female)",
 }
+AMERICAN_VOICES = {
+    "am_michael": "Michael (male)", "am_fenrir": "Fenrir (male)",
+    "am_puck": "Puck (male)", "am_adam": "Adam (male)",
+    "af_heart": "Heart (female)", "af_bella": "Bella (female)",
+    "af_nicole": "Nicole (female)", "af_sarah": "Sarah (female)",
+}
+READERS = {"british": BRITISH_VOICES, "american": AMERICAN_VOICES}
+DEFAULT_READER = {"british": "bm_george", "american": "am_michael"}
+ACCENTS = {"british": "British", "american": "American"}
+
+
+def readers(settings):
+    return READERS.get(settings.get("accent", "british"), BRITISH_VOICES)
 
 _lock = threading.Lock()
 
@@ -75,5 +89,7 @@ def save(changes: dict):
         for k, v in changes.items():
             if k in DEFAULTS:
                 s[k] = v
+        if s.get("base_voice") not in ("auto", *readers(s)):     # accent changed: pick a matching reader again
+            s["base_voice"] = "auto"
         SETTINGS_FILE.write_text(json.dumps(s, indent=2), "utf-8")
         return s

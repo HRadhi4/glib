@@ -12,9 +12,9 @@ Glib shows the script one sentence at a time. For every line you record it can:
 - **Polish** your real recording: remove "um" and "uh", repeated words and false starts,
   shorten long pauses, remove background noise and give it a finished, even sound. It compares
   what you said with the script and points out wrong or missing words.
-- **Rebuild** the line: a natural British reader says the script exactly as written, and Glib
-  speaks that reading in your voice, learned from samples of your voice. No slips, a neutral
-  accent and a livelier delivery.
+- **Rebuild** the line: a natural reader says the script exactly as written, in a British or
+  American accent (your choice), and Glib speaks that reading in your voice, learned from samples
+  of your voice. No slips, a clear accent and a livelier delivery.
 
 You choose, line by line, which version goes into the final audio file. Every line, polished or
 rebuilt, goes through the same finishing chain, so the whole recording sounds consistent.
@@ -36,11 +36,11 @@ To uninstall, use **Settings > Apps** in Windows. Your recordings and voice samp
 2. **Record**: paste a script, press **Space**, read the line, press **Space** again.
    Green means the take matches the script. Amber means it needs a second look.
 3. Use **Rebuild this line** for lines that are hard to get right, or **Rebuild every line**
-   for a whole script in the neutral accent.
+   for a whole script in the chosen accent.
 4. **Export the audio** saves one 24-bit WAV file at your chosen loudness, ready for the video editor.
 
 **Settings** has noise removal strength, the loudness target (-14 LUFS for YouTube, -16 LUFS to
-leave room for music), pause lengths, reading speed, the British reader, and a "Say it this way"
+leave room for music), pause lengths, reading speed, the accent (British or American) and reader, and a "Say it this way"
 list for words that are spoken differently from how they are written (NASA is said "nasa").
 
 ## How it works
@@ -49,7 +49,7 @@ list for words that are spoken differently from how they are written (NASA is sa
 |---|---|
 | Listening | NVIDIA Parakeet compares each take with the script, word by word |
 | Polish | Slips are cut at the quietest nearby moment with short crossfades; each cut is kept only if a second listen confirms the line is closer to the script |
-| Rebuild | Kokoro reads the line with a British accent, then one of two voice engines speaks it in your voice (below) |
+| Rebuild | Kokoro reads the line in a British or American accent, then one of two voice engines speaks it in your voice (below) |
 | Finishing | Rumble filter, neural noise removal at 48 kHz (DPDFNet), narration EQ, de-esser, compressor, loudness to a LUFS target (ITU-R BS.1770) and a true-peak limiter at -1 dBTP |
 
 ## The two voice engines

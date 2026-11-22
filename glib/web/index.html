@@ -176,7 +176,7 @@ function draw(){
     else { once("lines", [S.project, S.jobs, sel], drawLines); once("stage", [S.project.lines[sel], lineJob(sel), sel, S.exports[pid], jobFor("export:" + pid), S.voice.minutes], drawStage); drawMeter(); }
   }
   if (tab === "voice"){ once("voice", [S.voice, S.settings.base_voice, S.settings.voice_engine, jobFor("voice"), S.engines.rebuild_ready], drawVoice); drawMeter(); }
-  if (tab === "settings") once("settings", [S.settings, S.engines.missing_mb], drawSettings);
+  if (tab === "settings") once("settings", [S.settings, S.engines.missing_mb, S.voices], drawSettings);
 }
 
 function drawStatus(){
@@ -287,7 +287,7 @@ function drawStage(){
     ${(l.has.raw || l.has.rebuilt) ? `<div class="versions">
       ${ver("raw", "Original", "Your recording, untouched.")}
       ${ver("polished", "Polished", "Your recording with slips, long pauses and noise removed.")}
-      ${ver("rebuilt", "Rebuilt", "Read again from the script in your voice tone, with a neutral British accent.")}</div>` : ""}
+      ${ver("rebuilt", "Rebuilt", "Read again from the script in your voice, with a clear ${S.settings.accent === "american" ? "American" : "British"} accent.")}</div>` : ""}
     <div class="actions">
       <button id="rb" ${job || on ? "disabled" : ""}>${l.has.rebuilt ? "Rebuild again" : "Rebuild this line"}</button>
       <button id="edit" ${job || on ? "disabled" : ""}>Edit the text</button>
@@ -335,7 +335,7 @@ function drawVoice(){
   const v = S.voice, on = S.recorder.on, job = jobFor("voice"), goal = 5;
   $("#tab-voice").innerHTML = `<div class="two">
     <div class="card"><h2>Teach Glib your voice</h2>
-      <p class="muted">Rebuild reads the script with a natural British reader, then speaks it in <b>your</b> voice. To do that it needs to hear you. Read the text below in your normal speaking voice, in a quiet room. Mistakes do not matter here.</p>
+      <p class="muted">Rebuild reads the script with a natural British or American reader (your choice in Settings), then speaks it in <b>your</b> voice. To do that it needs to hear you. Read the text below in your normal speaking voice, in a quiet room. Mistakes do not matter here.</p>
       <div class="passage">${PASSAGE.map(p => `<p style="margin:0 0 12px">${esc(p)}</p>`).join("")}</div>
       <div class="recrow">
         <button class="rec ${on ? "on" : ""}" id="vrec" aria-label="${on ? "Stop" : "Record a voice sample"}"></button>
@@ -350,7 +350,7 @@ function drawVoice(){
       <p class="small muted">${v.minutes < 1 ? "Rebuild works from about one minute, but sounds rough until there is more." : v.minutes < goal ? "Good start. Adding more samples makes the rebuilt voice clearer and closer to yours." : "Plenty to work with."}</p>
       ${v.samples.map(s => `<div class="sample"><audio controls preload="none" src="/api/voice/${esc(s.name)}?v=${s.seconds}"></audio><span class="small muted">${s.seconds} s</span><button class="ghost small" data-vdel="${esc(s.name)}">Remove</button></div>${s.check ? `<div class="small" style="margin:-4px 0 6px;color:${s.check.verdict === "good" || s.check.verdict === "ok" ? "var(--green)" : s.check.verdict === "warn" ? "var(--amber)" : "var(--red)"}">${esc(s.check.text)}</div>` : ""}`).join("")}
       <p class="small" style="margin-top:10px">${v.engine === "match" ? "Rebuild uses <b>Closest to my voice</b>: your samples are long and clean enough." : `Rebuild uses <b>Natural</b>. ${v.minutes < v.match_minutes ? `Record ${Math.ceil(v.match_minutes - v.minutes)} more minute${Math.ceil(v.match_minutes - v.minutes) > 1 ? "s" : ""} of clean samples` : "Replace the samples marked in amber"} to unlock <b>Closest to my voice</b>, which sounds more like you.`}</p>
-      ${v.reader ? `<p class="small muted">Your natural pitch is about ${v.reader.pitch} Hz, so Rebuild reads with <b>${esc(v.reader.voice)}</b>.</p>` : ""}
+      ${v.reader ? `<p class="small muted">Your natural pitch is about ${v.reader.pitch} Hz, so Rebuild reads with <b>${esc(v.reader.voice)}</b> (${esc(v.reader.accent)} accent).</p>` : ""}
       ${v.samples.length ? `<div class="actions"><button id="learn" ${job ? "disabled" : ""}>${job ? esc(job.note || "Studying your voice…") : "Study my voice now"}</button><span class="small muted">Otherwise this happens on the first Rebuild.</span></div>` : ""}
       <h3 style="margin-top:22px">Tips for a close match</h3>
       <ul class="small muted" style="padding-left:18px;margin:6px 0">
@@ -383,7 +383,8 @@ async function drawSettings(){
       <h2 style="margin-top:22px">Rebuild</h2>
       ${num("speed", "Reading speed", "1 is normal. 0.9 is slower, 1.1 faster.", 0.7, 1.3, 0.05)}
       ${pick("voice_engine", "Voice engine", "Automatic uses “Closest to my voice” once you have 5 minutes of clean, echo-free samples, and “Natural” before that.", {auto: "Automatic", natural: "Natural (clean, smooth)", match: "Closest to my voice"})}
-      ${pick("base_voice", "British reader", "Sets the accent and rhythm. Automatic picks the reader closest to your own pitch.", Object.assign({auto: "Automatic"}, S.voices))}
+      ${pick("accent", "Accent", "The accent Rebuild reads your script in.", S.accents)}
+      ${pick("base_voice", "Reader", "Sets the rhythm and liveliness. Automatic picks the reader closest to your own pitch.", Object.assign({auto: "Automatic"}, S.voices))}
       ${pick("voice_quality", "Natural engine quality", "Highest is a little more detailed, but slower and a further 1 GB download.", {standard: "Standard", highest: "Highest"})}
     </div>
     <div class="card"><h2>Say it this way</h2>
@@ -397,7 +398,7 @@ async function drawSettings(){
     </div></div>`;
   document.querySelectorAll("#tab-settings [data-k]").forEach(el => el.onchange = () => {
     let v = el.value; if (el.type === "number") v = parseFloat(v); if (el.dataset.type === "bool") v = v === "true"; if (el.dataset.type === "dev") v = v === "" ? null : parseInt(v);
-    api("/api/settings", "POST", {[el.dataset.k]: v}).then(() => toast("Saved.", 1500));
+    api("/api/settings", "POST", {[el.dataset.k]: v}).then(() => { toast("Saved.", 1500); if (el.dataset.k === "accent") { drawn.settings = null; refresh(); } });
   });
   $("#saysave").onclick = async () => { const o = {}; document.querySelectorAll("#say tr").forEach(tr => { const [a, b] = tr.querySelectorAll("input"); if (a.value.trim() && b.value.trim()) o[a.value.trim()] = b.value.trim(); }); await api("/api/settings", "POST", {say_as: o}); drawn.settings = null; toast("Saved.", 1500); refresh(); };
 }
