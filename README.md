@@ -24,7 +24,7 @@ rebuilt, goes through the same finishing chain, so the whole recording sounds co
 1. Run **GlibSetup.exe**. If Windows shows a blue "Windows protected your PC" box, choose
    **More info**, then **Run anyway** (the installer is not code-signed yet).
 2. Follow the steps. No administrator rights are needed; Glib installs for your user only.
-3. The first time Glib opens, it downloads its voice engines (about 1.2 GB) once.
+3. The first time Glib opens, it downloads its voice engines (about 1.8 GB) once.
 
 To uninstall, use **Settings > Apps** in Windows. Your recordings and voice samples are kept in
 `%LOCALAPPDATA%\Glib` until you delete that folder yourself.
@@ -49,8 +49,21 @@ list for words that are spoken differently from how they are written (NASA is sa
 |---|---|
 | Listening | NVIDIA Parakeet compares each take with the script, word by word |
 | Polish | Slips are cut at the quietest nearby moment with short crossfades; each cut is kept only if a second listen confirms the line is closer to the script |
-| Rebuild | Kokoro reads the line with a British accent, then the Chatterbox voice converter speaks it in your voice, using the cleanest 10 seconds of your samples and your speaker identity averaged across all of them |
+| Rebuild | Kokoro reads the line with a British accent, then one of two voice engines speaks it in your voice (below) |
 | Finishing | Rumble filter, neural noise removal at 48 kHz (DPDFNet), narration EQ, de-esser, compressor, loudness to a LUFS target (ITU-R BS.1770) and a true-peak limiter at -1 dBTP |
+
+## The two voice engines
+
+| | Natural | Closest to my voice |
+|---|---|---|
+| How it works | Chatterbox generates fresh speech from the cleanest 10 seconds of your samples | kNN-VC rebuilds every sound from pieces of your own recordings |
+| Sounds like you | Partly | Closely |
+| Needs | Any samples, even short or a little echoey | 5+ minutes of clean, echo-free samples |
+| Risk | A little generic | Copies any room echo or noise in your samples |
+
+Glib chooses automatically: it uses **Closest to my voice** once your samples are long and clean
+enough, and **Natural** before that. You can override this in Settings. The quality check on each
+voice sample tells you if your room is too noisy or echoey.
 
 ## Good to know
 

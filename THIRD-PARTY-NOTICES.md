@@ -12,6 +12,10 @@ their own licences.
 | Kokoro v1.0 (hexgrad), ONNX build from kokoro-onnx | British reader | Apache-2.0 |
 | Chatterbox voice conversion (Resemble AI) | Speaking in your voice | MIT |
 | Chatterbox ONNX export (onnx-community; INT8 build by TigreGotico) | Running Chatterbox without PyTorch | Apache-2.0 |
+| WavLM-Large (Microsoft), first 6 layers, converted to ONNX for Glib | Closest-to-my-voice engine | MIT |
+| kNN-VC prematched HiFi-GAN vocoder (Baas, van Niekerk, Kamper), converted to ONNX for Glib | Closest-to-my-voice engine | MIT |
+
+The two kNN-VC files are hosted on this repository's `models` branch with their licence.
 
 Chatterbox's optional Perth watermark is not applied by Glib.
 

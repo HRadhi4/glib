@@ -71,4 +71,4 @@ Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -Com
 Type: filesandordirs; Name: "{app}"
 
 [Messages]
-FinishedLabel=Glib is installed.%n%nThe first time it opens, Glib downloads its voice engines (about 1.2 GB). After that it works without the internet, and nothing you record leaves this computer.
+FinishedLabel=Glib is installed.%n%nThe first time it opens, Glib downloads its voice engines (about 1.8 GB). After that it works without the internet, and nothing you record leaves this computer.
