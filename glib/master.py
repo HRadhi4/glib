@@ -179,7 +179,7 @@ def deess(x, sr, max_cut_db=8.0):
     return (rest + band * g).astype(np.float32)
 
 
-def compress(x, sr, ratio=3.0, below_speech_db=8.0, knee_db=6.0, attack_ms=8, release_ms=140):
+def compress(x, sr, ratio=2.0, below_speech_db=4.0, knee_db=6.0, attack_ms=20, release_ms=250):
     """Smooth voice compressor. Threshold sits a little under the speaking level so loud words
     are tamed and quiet ones come forward, without pumping."""
     lv, h = _env_db(x, sr, 1)
