@@ -37,6 +37,9 @@ To uninstall, use **Settings > Apps** in Windows. Your recordings and voice samp
    Green means the take matches the script. Amber means it needs a second look.
 3. Use **Rebuild this line** for lines that are hard to get right, or **Rebuild every line**
    for a whole script in the chosen accent.
+   Or skip recording altogether: **Make the audio without recording** (on the new-script page) or
+   **Read the whole script in my voice** reads every line in your voice and chosen accent and
+   saves the audio file. Only your voice samples are needed.
 4. **Export the audio** saves one 24-bit WAV file at your chosen loudness, ready for the video editor.
 
 **Settings** has noise removal strength, the loudness target (-14 LUFS for YouTube, -16 LUFS to

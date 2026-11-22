@@ -255,6 +255,26 @@ def rebuild_many(pid: str, body: dict = Body(default={})):
     return {"queued": n}
 
 
+@app.post("/api/projects/{pid}/autoread")
+def autoread(pid: str, body: dict = Body(default={})):
+    """Make the whole audio from the script alone, in your voice, with no recording."""
+    p = _need(pid)
+    _check_rebuild_ready()
+    if body.get("accent") in config.ACCENTS:
+        config.save({"accent": body["accent"]})
+    for i in range(len(p["lines"])):
+        store.update_line(pid, i, choice="rebuilt")       # use the read version of every line
+        submit(f"rebuild:{pid}:{i}", f"Reading line {i + 1} of {len(p['lines'])}",
+               lambda note, i=i: pipeline.rebuild(pid, i, note))
+
+    def run(note):
+        note("Joining the lines")
+        _exports[pid] = pipeline.export(pid)
+    jobs.pop(f"export:{pid}", None)
+    submit(f"export:{pid}", "Making the audio file", run)     # runs after the lines (jobs run in order)
+    return {"queued": len(p["lines"])}
+
+
 def _check_rebuild_ready():
     if not models.status(config.load())["rebuild_ready"]:
         raise HTTPException(400, "The voice engines are not downloaded yet. Press Download on the top bar.")

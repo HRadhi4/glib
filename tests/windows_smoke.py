@@ -216,6 +216,16 @@ for i in (1, 5):
     (OUT / f"line{i + 1}_rebuilt_american.wav").write_bytes(call(f"/api/projects/{pid}/lines/{i}/rebuilt.wav", raw=True))
 call("/api/settings", "POST", {"accent": "british"})
 
+# ------------------------------------------------------------------ 6d. whole audio from the script, no recording
+pid2 = call("/api/projects", "POST", {"title": "No recording", "script": SCRIPT})["id"]
+t0 = time.time()
+call(f"/api/projects/{pid2}/autoread", "POST", {"accent": "american"})
+s = wait_jobs(pid2)
+log("autoread", seconds=round(time.time() - t0, 1), export=s["exports"].get(pid2),
+    checks=[l.get("check", {}).get("state") if l.get("check") else None for l in s["project"]["lines"]])
+(OUT / "autoread_american.wav").write_bytes(call(f"/api/projects/{pid2}/export.wav", raw=True))
+call("/api/settings", "POST", {"accent": "british"})
+
 # ------------------------------------------------------------------ 7. highest quality converter, same lines
 call("/api/settings", "POST", {"voice_quality": "highest"})
 t0 = time.time()

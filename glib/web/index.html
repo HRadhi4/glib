@@ -172,7 +172,7 @@ function draw(){
   once("status", [S.jobs, S.engines.progress], drawStatus);
   once("banner", [S.engines.progress, S.engines.missing_mb, S.engines.rebuild_ready], drawBanner);
   if (tab === "record"){
-    if (!pid) once("start", [S.projects, S.engines.polish_ready], drawStart);
+    if (!pid) once("start", [S.projects, S.engines.polish_ready, S.voice.samples.length, S.settings.accent], drawStart);
     else { once("lines", [S.project, S.jobs, sel], drawLines); once("stage", [S.project.lines[sel], lineJob(sel), sel, S.exports[pid], jobFor("export:" + pid), S.voice.minutes], drawStage); drawMeter(); }
   }
   if (tab === "voice"){ once("voice", [S.voice, S.settings.base_voice, S.settings.voice_engine, jobFor("voice"), S.engines.rebuild_ready], drawVoice); drawMeter(); }
@@ -206,12 +206,24 @@ function drawStart(){
       <p class="muted">Paste your script. Glib splits it into sentences and shows them one at a time, like a teleprompter. Start a line with <b>#</b> to mark it as a title.</p>
       <label for="ptitle">Name</label><input id="ptitle" placeholder="e.g. Welcome video">
       <label for="pscript">Script</label><textarea id="pscript" rows="12" placeholder="# Welcome&#10;Hello, and thank you for watching.&#10;Today we will look at three simple ideas.&#10;…"></textarea>
-      <div class="actions"><button class="primary" id="pgo">Start recording</button></div>
+      <div class="actions"><button class="primary" id="pgo">Start recording</button>
+        <span class="muted">or</span>
+        <button id="pauto" title="Glib reads the whole script in your voice and makes the audio file. No recording needed.">Make the audio without recording</button>
+        <select id="paccent" style="width:auto">${Object.entries(S.accents).map(([k, n]) => `<option value="${k}" ${S.settings.accent === k ? "selected" : ""}>${esc(n)} accent</option>`).join("")}</select></div>
+      <p class="small muted">Making the audio without recording needs your voice samples (My Voice tab). Glib reads every line in your voice and the chosen accent, then saves one audio file. You can still listen to each line and record or redo any of them afterwards.</p>
     </div>
     <div class="card"><h2>Your scripts</h2>
       ${S.projects.length ? `<ul class="plist">${S.projects.map(p => `<li><a data-open="${esc(p.id)}">${esc(p.title)}</a><span class="small muted">${p.lines} lines</span><button class="ghost small" data-del="${esc(p.id)}" title="Delete this script and its recordings">Delete</button></li>`).join("")}</ul>` : `<p class="muted">Nothing yet. Your scripts and recordings will be listed here.</p>`}
     </div></div>`;
   $("#pgo").onclick = async () => { const p = await api("/api/projects", "POST", {title: $("#ptitle").value, script: $("#pscript").value}); openProject(p.id); };
+  $("#pauto").onclick = async () => {
+    if (!S.voice.samples.length) return toast("First record a few minutes of your voice in the My Voice tab, so Glib can read in your voice.");
+    const p = await api("/api/projects", "POST", {title: $("#ptitle").value, script: $("#pscript").value});
+    openProject(p.id);
+    await api(`/api/projects/${p.id}/autoread`, "POST", {accent: $("#paccent").value});
+    toast("Glib is reading your script in your voice. The audio file will be ready when the bar at the top finishes.", 7000);
+    refresh();
+  };
   document.querySelectorAll("[data-open]").forEach(a => a.onclick = () => openProject(a.dataset.open));
   document.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => { if (confirm("Delete this script and all its recordings?")){ await api("/api/projects/" + b.dataset.del, "DELETE"); drawn = {}; refresh(); } });
 }
@@ -306,11 +318,18 @@ function drawStage(){
 
   const ex = S.exports[pid], ej = jobFor("export:" + pid);
   $("#footer").innerHTML = `
+    <button onclick="autoRead()" title="Read every line in your voice from the script and make the audio file, with no recording">Read the whole script in my voice</button>
     <button onclick="rebuildMany(true)" title="Rebuild only the lines that are not recorded or need a second look">Rebuild lines that need it</button>
     <button onclick="rebuildMany(false)" title="Rebuild every line, for a full reading in the neutral accent">Rebuild every line</button>
     <div class="spacer"></div>
     ${ex && !ej ? `<span class="small muted">Saved ${esc(ex.name)} · ${ex.minutes} min · ${ex.lufs} LUFS${ex.skipped.length ? ` · ${ex.skipped.length} line(s) skipped (nothing recorded)` : ""}</span><a href="/api/projects/${pid}/export.wav"><button>Download</button></a><button onclick="api('/api/open','POST',{pid})">Open folder</button>` : ""}
     <button class="primary" ${ej ? "disabled" : ""} onclick="api('/api/projects/${pid}/export','POST').then(refresh)">${ej ? "Exporting…" : "Export the audio"}</button>`;
+}
+async function autoRead(){
+  if (!confirm(`Read every line in your voice with a ${S.settings.accent === "american" ? "American" : "British"} accent and make the audio file? Lines you recorded are kept and you can switch back to them.`)) return;
+  await api(`/api/projects/${pid}/autoread`, "POST", {});
+  toast("Reading the script in your voice. The audio file will be ready when the bar at the top finishes.", 7000);
+  refresh();
 }
 async function rebuildMany(onlyFlagged){
   const r = await api(`/api/projects/${pid}/rebuild`, "POST", onlyFlagged ? {only_missing: true, only_flagged: true} : {only_missing: false});
