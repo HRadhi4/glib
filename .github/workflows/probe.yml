@@ -1,0 +1,26 @@
+name: probe
+on:
+  push:
+    branches: [ci-probe]
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: windows-latest
+    steps:
+      - name: Check tools
+        shell: pwsh
+        run: |
+          $out = @()
+          $out += "iscc: " + (Test-Path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe")
+          $out += "python: " + (python --version)
+          try { $r = Invoke-WebRequest -UseBasicParsing -Method Head "https://huggingface.co/onnx-community/chatterbox-ONNX/resolve/main/onnx/speech_encoder.onnx"; $out += "hf: " + $r.StatusCode } catch { $out += "hf: " + $_.Exception.Message }
+          $out | Set-Content probe.txt
+          Get-Content probe.txt
+      - name: Report back
+        shell: pwsh
+        run: |
+          git init -q rep; Copy-Item probe.txt rep/; cd rep
+          git config user.name "HRadhi4"; git config user.email "HRadhi4@users.noreply.github.com"
+          git checkout -q -b ci-results; git add probe.txt; git commit -q -m "probe results"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-results
