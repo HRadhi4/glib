@@ -80,6 +80,12 @@ def index():
     return FileResponse(config.WEB / "index.html", headers={"Cache-Control": "no-store"})
 
 
+@app.get("/api/hello")
+def hello():
+    """Lets a second launch recognise a running Glib."""
+    return {"app": "glib", "version": __version__}
+
+
 @app.post("/api/bye")
 def bye():
     """Sent by the window as it closes."""

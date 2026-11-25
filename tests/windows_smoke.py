@@ -19,10 +19,15 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 
-URL = "http://127.0.0.1:8756"
 OUT = Path(sys.argv[1] if len(sys.argv) > 1 else "smoke_out")
 OUT.mkdir(parents=True, exist_ok=True)
 DATA = Path(os.environ.get("LOCALAPPDATA", "")) / "Glib"
+for _ in range(120):                       # Glib writes the port it chose (the usual one may be taken)
+    if (DATA / "glib.port").exists():
+        break
+    time.sleep(1)
+PORT = int((DATA / "glib.port").read_text().strip())
+URL = f"http://127.0.0.1:{PORT}"
 R = {"steps": [], "started": time.time()}
 
 
@@ -81,7 +86,8 @@ for _ in range(90):
     except Exception:
         time.sleep(1)
 s = state()
-log("app_up", version=s["version"], data_folder=str(DATA), engines=s["engines"])
+log("app_up", version=s["version"], port=PORT, data_folder=str(DATA), engines=s["engines"])
+log("second_launch_check", hello=call("/api/hello"))
 
 # ------------------------------------------------------------------ 2. engines
 t0 = time.time()

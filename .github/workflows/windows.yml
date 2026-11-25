@@ -56,6 +56,10 @@ jobs:
         shell: pwsh
         run: |
           "step: add glib" >> build-info.txt
+          # Microsoft C++ runtime next to Python, so Glib works on PCs without the Visual C++ Redistributable
+          foreach ($d in "msvcp140.dll","msvcp140_1.dll","msvcp140_2.dll","vcruntime140.dll","vcruntime140_1.dll","concrt140.dll") {
+            if (-not (Test-Path "build\app\runtime\$d") -and (Test-Path "$env:WINDIR\System32\$d")) { Copy-Item "$env:WINDIR\System32\$d" build\app\runtime\ }
+          }
           Copy-Item -Recurse glib build\app\glib
           Copy-Item -Recurse assets build\app\assets
           Copy-Item LICENSE.md,COMMERCIAL-LICENSE.md,THIRD-PARTY-NOTICES.md,README.md build\app\
@@ -94,10 +98,19 @@ jobs:
         run: |
           $app = "$env:LOCALAPPDATA\Programs\Glib"
           $env:GLIB_APP = $app
+          # occupy Glib's usual port first, as Docker/WSL often do on real PCs: Glib must pick another one
+          $blocker = Start-Process "$app\runtime\python.exe" -ArgumentList "-m","http.server","8756","--bind","127.0.0.1" -PassThru -WindowStyle Hidden
+          Start-Sleep 2
+          Start-Process "$app\runtime\pythonw.exe" -ArgumentList "-m","glib" -WorkingDirectory $app
+          Start-Sleep 5
+          # a second launch must find the running copy, not start another
           Start-Process "$app\runtime\pythonw.exe" -ArgumentList "-m","glib" -WorkingDirectory $app
           & "$app\runtime\python.exe" tests\windows_smoke.py smoke_out *>> steps.log
           $code = $LASTEXITCODE
           "smoke exit: $code" | Tee-Object -Append -FilePath build-info.txt
+          "glib processes running: " + @(Get-Process pythonw -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$app\runtime\*" }).Count | Tee-Object -Append -FilePath build-info.txt
+          Copy-Item "$env:LOCALAPPDATA\Glib\glib.log" smoke_out\ -ErrorAction SilentlyContinue
+          Stop-Process -Id $blocker.Id -ErrorAction SilentlyContinue
           if ($code -ne 0) { exit 1 }
 
       - name: Uninstall (recordings must stay)
