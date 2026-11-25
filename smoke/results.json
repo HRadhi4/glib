@@ -1,0 +1,535 @@
+{
+ "steps": [
+  {
+   "version": "0.2.3",
+   "port": 8757,
+   "data_folder": "C:\\Users\\runneradmin\\AppData\\Local\\Glib",
+   "engines": {
+    "items": [
+     {
+      "name": "listener",
+      "about": "Listens to your recording and compares it with the script",
+      "mb": 630,
+      "ready": false
+     },
+     {
+      "name": "denoiser",
+      "about": "Removes background noise at full studio quality",
+      "mb": 11,
+      "ready": false
+     },
+     {
+      "name": "reader",
+      "about": "Reader used by Rebuild (British and American voices)",
+      "mb": 310,
+      "ready": false
+     },
+     {
+      "name": "reader_voices",
+      "about": "Reader voices",
+      "mb": 27,
+      "ready": false
+     },
+     {
+      "name": "converter_enc",
+      "about": "Learns your voice",
+      "mb": 216,
+      "ready": false
+     },
+     {
+      "name": "converter_dec",
+      "about": "Speaks in your voice",
+      "mb": 252,
+      "ready": false
+     },
+     {
+      "name": "match_encoder",
+      "about": "Learns the details of your voice",
+      "mb": 355,
+      "ready": false
+     },
+     {
+      "name": "match_vocoder",
+      "about": "Rebuilds your voice from those details",
+      "mb": 66,
+      "ready": false
+     }
+    ],
+    "polish_ready": false,
+    "rebuild_ready": false,
+    "missing_mb": 1867,
+    "progress": {
+     "running": false,
+     "current": null,
+     "done_mb": 0,
+     "total_mb": 0,
+     "error": null
+    }
+   },
+   "step": "app_up",
+   "t": 0.3
+  },
+  {
+   "hello": {
+    "app": "glib",
+    "version": "0.2.3"
+   },
+   "step": "second_launch_check",
+   "t": 0.3
+  },
+  {
+   "seconds": 63,
+   "ready": true,
+   "error": null,
+   "polish_ready": true,
+   "step": "engines",
+   "t": 63.6
+  },
+  {
+   "n": 1,
+   "minutes": 0.23,
+   "check": {
+    "snr": 24.8,
+    "level": -25.8,
+    "verdict": "ok",
+    "text": "Good. A little background noise."
+   },
+   "step": "voice_sample",
+   "t": 74.4
+  },
+  {
+   "n": 2,
+   "minutes": 0.5,
+   "check": {
+    "snr": 24.9,
+    "level": -25.7,
+    "verdict": "ok",
+    "text": "Good. A little background noise."
+   },
+   "step": "voice_sample",
+   "t": 85.3
+  },
+  {
+   "n": 3,
+   "minutes": 0.74,
+   "check": {
+    "snr": 25.5,
+    "level": -25.2,
+    "verdict": "ok",
+    "text": "Good. A little background noise."
+   },
+   "step": "voice_sample",
+   "t": 95.2
+  },
+  {
+   "n": 4,
+   "minutes": 0.99,
+   "check": {
+    "snr": 25.0,
+    "level": -25.5,
+    "verdict": "ok",
+    "text": "Good. A little background noise."
+   },
+   "step": "voice_sample",
+   "t": 104.6
+  },
+  {
+   "n": 5,
+   "minutes": 1.23,
+   "check": {
+    "snr": 25.1,
+    "level": -25.5,
+    "verdict": "ok",
+    "text": "Good. A little background noise."
+   },
+   "step": "voice_sample",
+   "t": 114.3
+  },
+  {
+   "n": 6,
+   "minutes": 1.46,
+   "check": {
+    "snr": 25.0,
+    "level": -25.6,
+    "verdict": "ok",
+    "text": "Good. A little background noise."
+   },
+   "step": "voice_sample",
+   "t": 123.3
+  },
+  {
+   "n": 7,
+   "minutes": 1.68,
+   "check": {
+    "snr": 24.8,
+    "level": -25.7,
+    "verdict": "ok",
+    "text": "Good. A little background noise."
+   },
+   "step": "voice_sample",
+   "t": 132.5
+  },
+  {
+   "n": 8,
+   "minutes": 1.95,
+   "check": {
+    "snr": 24.9,
+    "level": -25.6,
+    "verdict": "ok",
+    "text": "Good. A little background noise."
+   },
+   "step": "voice_sample",
+   "t": 143.3
+  },
+  {
+   "n": 9,
+   "minutes": 2.2,
+   "check": {
+    "snr": 25.4,
+    "level": -25.2,
+    "verdict": "ok",
+    "text": "Good. A little background noise."
+   },
+   "step": "voice_sample",
+   "t": 153.1
+  },
+  {
+   "n": 10,
+   "minutes": 2.44,
+   "check": {
+    "snr": 25.0,
+    "level": -25.6,
+    "verdict": "ok",
+    "text": "Good. A little background noise."
+   },
+   "step": "voice_sample",
+   "t": 162.8
+  },
+  {
+   "n": 11,
+   "minutes": 2.68,
+   "check": {
+    "snr": 25.1,
+    "level": -25.4,
+    "verdict": "ok",
+    "text": "Good. A little background noise."
+   },
+   "step": "voice_sample",
+   "t": 172.6
+  },
+  {
+   "n": 12,
+   "minutes": 2.91,
+   "check": {
+    "snr": 24.9,
+    "level": -25.6,
+    "verdict": "ok",
+    "text": "Good. A little background noise."
+   },
+   "step": "voice_sample",
+   "t": 182.6
+  },
+  {
+   "line": 1,
+   "state": "good",
+   "slips_removed": 0,
+   "pause_removed": 1.0,
+   "flags": [],
+   "lufs": -16.3,
+   "true_peak": -1.0,
+   "step": "polish",
+   "t": 222.3
+  },
+  {
+   "line": 2,
+   "state": "good",
+   "slips_removed": 1,
+   "pause_removed": 0.9,
+   "flags": [],
+   "lufs": -16.7,
+   "true_peak": -1.0,
+   "step": "polish",
+   "t": 222.3
+  },
+  {
+   "line": 3,
+   "state": "good",
+   "slips_removed": 2,
+   "pause_removed": 0.9,
+   "flags": [],
+   "lufs": -16.5,
+   "true_peak": -1.0,
+   "step": "polish",
+   "t": 222.3
+  },
+  {
+   "line": 4,
+   "state": "good",
+   "slips_removed": 0,
+   "pause_removed": 1.0,
+   "flags": [],
+   "lufs": -17.2,
+   "true_peak": -1.0,
+   "step": "polish",
+   "t": 222.3
+  },
+  {
+   "line": 5,
+   "state": "check",
+   "slips_removed": 0,
+   "pause_removed": 1.0,
+   "flags": [
+    "Wrong word: said \u201cfifty\u201d, script says \u201c40\u201d"
+   ],
+   "lufs": -16.7,
+   "true_peak": -1.0,
+   "step": "polish",
+   "t": 222.3
+  },
+  {
+   "line": 6,
+   "state": "good",
+   "slips_removed": 0,
+   "pause_removed": 0.8,
+   "flags": [],
+   "lufs": -16.7,
+   "true_peak": -1.0,
+   "step": "polish",
+   "t": 222.3
+  },
+  {
+   "line": 7,
+   "state": "good",
+   "slips_removed": 1,
+   "pause_removed": 0.9,
+   "flags": [],
+   "lufs": -16.8,
+   "true_peak": -1.0,
+   "step": "polish",
+   "t": 222.3
+  },
+  {
+   "seconds": 40,
+   "step": "polish_total",
+   "t": 222.3
+  },
+  {
+   "line": 1,
+   "check": {
+    "flags": [],
+    "state": "good",
+    "seconds": 1.9,
+    "engine": "natural"
+   },
+   "step": "rebuild",
+   "t": 374.1
+  },
+  {
+   "line": 2,
+   "check": {
+    "flags": [],
+    "state": "good",
+    "seconds": 3.3,
+    "engine": "natural"
+   },
+   "step": "rebuild",
+   "t": 374.1
+  },
+  {
+   "line": 3,
+   "check": {
+    "flags": [],
+    "state": "good",
+    "seconds": 3.3,
+    "engine": "natural"
+   },
+   "step": "rebuild",
+   "t": 374.1
+  },
+  {
+   "line": 4,
+   "check": {
+    "flags": [],
+    "state": "good",
+    "seconds": 3.7,
+    "engine": "natural"
+   },
+   "step": "rebuild",
+   "t": 374.1
+  },
+  {
+   "line": 5,
+   "check": {
+    "flags": [],
+    "state": "good",
+    "seconds": 4.0,
+    "engine": "natural"
+   },
+   "step": "rebuild",
+   "t": 374.1
+  },
+  {
+   "line": 6,
+   "check": {
+    "flags": [],
+    "state": "good",
+    "seconds": 7.2,
+    "engine": "natural"
+   },
+   "step": "rebuild",
+   "t": 374.1
+  },
+  {
+   "line": 7,
+   "check": {
+    "flags": [],
+    "state": "good",
+    "seconds": 1.8,
+    "engine": "natural"
+   },
+   "step": "rebuild",
+   "t": 374.1
+  },
+  {
+   "seconds": 151.8,
+   "audio_seconds": 25.2,
+   "seconds_per_audio_second": 6.02,
+   "reader": {
+    "voice": "Fable (male)",
+    "pitch": 119,
+    "accent": "British"
+   },
+   "step": "rebuild_total",
+   "t": 374.2
+  },
+  {
+   "result": {
+    "file": "C:\\Users\\runneradmin\\AppData\\Local\\Glib\\projects\\smoke-test-20261125-201009\\Smoke test.wav",
+    "name": "Smoke test.wav",
+    "minutes": 0.53,
+    "used": {
+     "polished": 6,
+     "rebuilt": 1,
+     "raw": 0
+    },
+    "skipped": [],
+    "lufs": -16.3,
+    "true_peak": -1.0
+   },
+   "step": "export",
+   "t": 375.2
+  },
+  {
+   "seconds": 24.4,
+   "checks": [
+    {
+     "flags": [],
+     "state": "good",
+     "seconds": 3.8,
+     "engine": "match"
+    },
+    {
+     "flags": [],
+     "state": "good",
+     "seconds": 3.8,
+     "engine": "match"
+    },
+    {
+     "flags": [],
+     "state": "good",
+     "seconds": 7.2,
+     "engine": "match"
+    }
+   ],
+   "step": "rebuild_match",
+   "t": 400.0
+  },
+  {
+   "seconds": 58.9,
+   "reader": {
+    "voice": "Michael (male)",
+    "pitch": 119,
+    "accent": "American"
+   },
+   "settings_reader": "auto",
+   "checks": [
+    {
+     "flags": [],
+     "state": "good",
+     "seconds": 3.6,
+     "engine": "natural"
+    },
+    {
+     "flags": [],
+     "state": "good",
+     "seconds": 8.9,
+     "engine": "natural"
+    }
+   ],
+   "step": "rebuild_american",
+   "t": 459.0
+  },
+  {
+   "seconds": 113.8,
+   "export": {
+    "file": "C:\\Users\\runneradmin\\AppData\\Local\\Glib\\projects\\no-recording-20261125-201445\\No recording.wav",
+    "name": "No recording.wav",
+    "minutes": 0.53,
+    "used": {
+     "polished": 0,
+     "rebuilt": 7,
+     "raw": 0
+    },
+    "skipped": [],
+    "lufs": -16.4,
+    "true_peak": -1.0
+   },
+   "checks": [
+    "good",
+    "good",
+    "good",
+    "good",
+    "good",
+    "good",
+    "good"
+   ],
+   "step": "autoread",
+   "t": 572.9
+  },
+  {
+   "seconds": 12,
+   "ready": true,
+   "step": "engines_highest",
+   "t": 585.0
+  },
+  {
+   "seconds": 60.0,
+   "step": "rebuild_highest",
+   "t": 645.0
+  },
+  {
+   "seconds": 12.7,
+   "step": "long_source",
+   "t": 652.1
+  },
+  {
+   "piece_seconds": 9.0,
+   "out_seconds": 12.7,
+   "work": 44.5,
+   "step": "long_convert",
+   "t": 696.6
+  },
+  {
+   "piece_seconds": 30.0,
+   "out_seconds": 10.0,
+   "work": 25.1,
+   "step": "long_convert",
+   "t": 721.7
+  },
+  {
+   "step": "done",
+   "t": 721.7
+  }
+ ],
+ "started": 1795637226.7483287
+}

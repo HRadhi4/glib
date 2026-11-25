@@ -1,0 +1,45 @@
+Python runtime: cpython-3.12.16+20261124-x86_64-pc-windows-msvc-install_only.tar.gz
+annotated-doc==0.0.7
+annotated-types==0.8.0
+anyio==4.16.0
+attrs==26.1.0
+cffi==2.1.1
+click==8.5.1
+cloudpickle==3.1.3
+dlinfo==2.0.0
+espeakng-loader==0.2.4
+fastapi==0.165.0
+flatbuffers==25.12.19
+h11==0.16.0
+idna==3.20
+joblib==1.6.0
+kokoro-onnx==0.6.1
+numpy==2.5.5
+onnxruntime==1.32.0
+opentelemetry-api==1.45.2
+packaging==26.3
+phonemizer==3.6.0
+pip==26.3
+protobuf==7.36.2
+pycparser==3.12
+pydantic==2.14.4
+pydantic_core==2.50.5
+python-multipart==0.0.34
+scipy==1.18.1
+sherpa_onnx==2.0.2
+sherpa-onnx-core==2.0.2
+sounddevice==0.5.6
+soundfile==0.14.0
+starlette==1.10.0
+typing_extensions==4.16.0
+typing-inspection==0.4.5
+uvicorn==0.54.0
+361 MB runtime
+step: add glib
+step: build installer
+GlibSetup-0.2.3.exe 81.7 MB
+program folder: True start menu: True desktop: True uninstaller: True
+smoke exit: 0
+glib processes running: 1
+after uninstall, program folder exists: False
+after uninstall, recordings kept: True
